@@ -1,0 +1,37 @@
+# Python
+__pycache__/
+*.pyc
+venv/
+.venv/
+
+# Environnement
+.env
+
+# Streamlit
+.streamlit/secrets.toml
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Données et résultats
+data/
+output/
+results/
+uploads/
+temp/
+
+# Cache et tests
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Fichiers lourds
+*.pkl
+*.h5
+*.pt
+*.onnx
