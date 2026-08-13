@@ -66,15 +66,48 @@
 % ------------------------------------------------------------
 % Métadonnées du document
 % ------------------------------------------------------------
-\title{\Huge\color{teal} ImageSense \\[0.4em]
-       \Large Documentation technique et modèles mathématiques}
-\author{Projet d'analyse colorimétrique d'images}
-\date{\today}
-
 \begin{document}
 
-\maketitle
-\thispagestyle{empty}
+\begin{titlepage}
+    \begin{center}
+        \begin{minipage}[t]{0.3\textwidth}
+            \centering
+            \includegraphics[height=4cm]{../logo/uf.jpeg}
+        \end{minipage}
+        \hfill
+        \begin{minipage}[t]{0.3\textwidth}
+            \centering
+            \includegraphics[height=4cm]{../logo/emit.jpeg}
+        \end{minipage}
+        \vspace*{1cm}
+
+        {\large UNIVERSITÉ DE FIANARANTSOA}\\
+        \vspace{0.5cm}
+        {\large ECOLE DE MANAGEMENT ET D'INNOVATION TECHNOLOGIQUE}\\
+        \vspace{1cm}
+
+        {\Large Documentation technique et modèles mathématiques}\\
+        \vspace{1.5cm}
+        
+        {\large ---------------------------------------------------------------}\\       
+        {\Huge \color{teal}\textbf{ImageSense}}\\
+        {\large --------------------------------------------------------------------------------------}\\       
+        \vspace{0.5cm}
+        {\large Projet d'analyse colorimétrique d'images}\\       
+             
+        \vspace{2cm}
+        \begin{tabular}{rl}
+            
+            \textbf Présenté par:\\
+            \textbf{286I22 -} & RAVELOARIMANANA Maminiaina Emmanuel\\
+            \vspace{1.5cm}
+        \end{tabular}\\
+        {\large \textbf{Enseignant :} Professeur RAKOTONIRAINY Hasina Lalaina\\}
+        \vfill
+        {\large Année universitaire 2025 -2026}
+    \end{center}
+\end{titlepage}
+
 \newpage
 
 % ============================================================
@@ -225,7 +258,7 @@ dépendances} : le module central \texttt{ColorAnalyzer} orchestre des
 services indépendants, ce qui facilite les tests et la maintenance.
 
 \begin{lstlisting}[language=bash]
-ImageSense/
+color_analysis/
 |
 |-- app.py                  # Point d'entree Streamlit (orchestration UI)
 |-- constants.py            # Constantes : couleurs de reference, bornes K, seuils
@@ -240,7 +273,9 @@ ImageSense/
 |-- styles.py               # CSS global + CSS iframe
 |-- .streamlit/config.toml  # Theme ocean Streamlit
 |-- requirements.txt        # Dependances Python
-+-- DOCUMENTATION.tex       # Ce document
+|-- logo/                   # Images de presentation (assets)
+|-- docs/                   # Documentation : .tex, .md, .pdf, script de compilation
++-- README.md               # Presentation du projet
 \end{lstlisting}
 
 \subsection{Description des modules}

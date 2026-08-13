@@ -90,4 +90,6 @@ ImageSense/
 ├── .streamlit/config.toml  # Thème et configuration Streamlit
 ├── requirements.txt        # Dépendances Python
 ├── .gitignore              # Fichiers à ignorer par Git
+├── logo/                   # Images de présentation (assets)
+├── docs/                   # Documentation (LaTeX, Markdown, PDF, compile_pdf.py)
 └── README.md               # Documentation du projet

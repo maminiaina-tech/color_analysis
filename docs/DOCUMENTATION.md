@@ -116,7 +116,9 @@ ImageSense/
 ├── styles.py               # CSS global + CSS iframe
 ├── .streamlit/config.toml  # Thème océan Streamlit
 ├── requirements.txt        # Dépendances Python
-└── DOCUMENTATION.md        # Ce document
+├── logo/                   # Images de présentation (assets)
+├── docs/                   # Documentation : .tex, .md, .pdf, script de compilation
+└── README.md               # Présentation du projet
 ```
 
 ### 5.2 Description des modules
