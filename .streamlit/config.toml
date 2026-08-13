@@ -1,0 +1,16 @@
+# ============================================================
+# Configuration du thème Streamlit.
+# Palette professionnelle : indigo / slate / neutres chauds.
+# ============================================================
+
+[theme]
+base = "light"
+primaryColor = "#4F46E5"
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#F1F5F9"
+textColor = "#1E293B"
+font = "sans serif"
+
+[server]
+headless = true
+runOnSave = false

@@ -6,6 +6,19 @@ Application web développée avec **Python** et **Streamlit**, dans le cadre du 
 
 ---
 
+## Interface et design
+
+L'interface a été conçue pour un rendu professionnel :
+
+- **Thème personnalisé** défini dans `.streamlit/config.toml` (palette indigo, typographie soignée) ;
+- **Bandeau d'en-tête** (hero) avec dégradé et badges récapitulatifs des fonctionnalités ;
+- **CSS global centralisé** dans `styles.py` : cartes de métriques, cadres d'images, palette de couleurs avec rang, effet de survol, copie des codes HEX ;
+- **Barre latérale organisée** en sections repliables (luminosité, tons, détail, effets avancés, filtres artistiques) ;
+- **Graphique des proportions** coloré avec la couleur correspondante (Altair) ;
+- **Tableau détaillé** avec colonnes renommées et formatage.
+
+---
+
 ## Contexte
 
 Ce projet consiste à analyser une image uploadée par l'utilisateur afin d'en extraire les couleurs dominantes, d'estimer leurs proportions et de les classifier automatiquement par clustering dans l'espace colorimétrique **LAB**, plus proche de la perception humaine que l'espace RGB.
@@ -65,10 +78,13 @@ analyse_couleurs/
 ├── constants.py            # Constantes et paramètres du projet
 ├── models.py               # Classes de résultats (ColorResult, AnalysisMetadata)
 ├── image_processor.py      # Classe ImageProcessor
+├── image_editor.py         # Classe ImageEditor (retouche façon Photoshop)
 ├── color_processor.py      # Classe ColorProcessor
 ├── clustering_service.py   # Classe ClusteringService
 ├── color_analyzer.py       # Classe ColorAnalyzer (orchestration)
 ├── result_renderer.py      # Classe ResultRenderer (interface Streamlit)
+├── styles.py               # CSS global de l'interface
+├── .streamlit/config.toml  # Thème et configuration Streamlit
 ├── requirements.txt        # Dépendances Python
 ├── .gitignore              # Fichiers à ignorer par Git
 └── README.md               # Documentation du projet
