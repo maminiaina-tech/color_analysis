@@ -1,7 +1,7 @@
 # image_editor.py
 
 import numpy as np
-from PIL import Image, ImageEnhance, ImageFilter
+from PIL import Image, ImageEnhance, ImageFilter, ImageOps, ImageChops
 
 from constants import ARTISTIC_FILTERS, TINT_COLORS
 
@@ -318,7 +318,8 @@ class ImageEditor:
         h, s, v = hsv.split()
 
         offset = int(round(hue / 360.0 * 256)) % 256
-        h = h.point(lambda x: (x + offset) % 256)
+        # PIL.ImageOps has no 'offset' function; use ImageChops.offset
+        h = ImageChops.offset(h, offset, 0)
 
         return Image.merge("HSV", (h, s, v)).convert("RGB")
 
@@ -465,8 +466,8 @@ class ImageEditor:
         small_w = max(1, width // block)
         small_h = max(1, height // block)
 
-        small = img.resize((small_w, small_h), Image.NEAREST)
-        return small.resize((width, height), Image.NEAREST)
+        small = img.resize((small_w, small_h), Image.Resampling.NEAREST)
+        return small.resize((width, height), Image.Resampling.NEAREST)
 
     # ========================================================
     # Teinte colorée.
