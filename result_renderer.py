@@ -24,6 +24,8 @@ from constants import (
     ARTISTIC_FILTERS
 )
 
+from styles import IFRAME_CSS
+
 
 # ============================================================
 # Valeurs par défaut des réglages de retouche.
@@ -110,7 +112,7 @@ class ResultRenderer:
 
         with st.sidebar:
 
-            st.markdown("#### 🔍 Paramètres d'analyse")
+            st.markdown("#### :material/search: Paramètres d'analyse")
 
             # Étape 1 : sélection de la taille maximale.
             max_size = st.slider(
@@ -171,7 +173,7 @@ class ResultRenderer:
         # Cas 1 : des résultats existent, on propose de réinitialiser.
         if a_resultats:
             if st.button(
-                "↻ Réinitialiser l'analyse",
+                ":material/restart_alt: Réinitialiser l'analyse",
                 key="reset_analysis",
                 width="stretch",
             ):
@@ -189,12 +191,12 @@ class ResultRenderer:
         # Cas 2 : aucun résultat, on propose de lancer l'analyse.
         st.markdown(
             """
-            <div style="background:#EEF2FF; border:1px solid #C7D2FE;
+            <div style="background:#DCE8EB; border:1px solid #709CA7;
                         border-radius:12px; padding:14px 18px; margin-bottom:12px;">
-                <div style="font-weight:700; color:#312E81; font-size:0.95rem;">
-                    ⚡ Prêt à analyser
+                <div style="font-weight:700; color:#344D59; font-size:0.95rem;">
+                    Prêt à analyser
                 </div>
-                <div style="color:#4338CA; font-size:0.85rem; margin-top:2px;">
+                <div style="color:#137C8B; font-size:0.85rem; margin-top:2px;">
                     Cliquez sur le bouton ci-dessous pour extraire les couleurs
                     dominantes de l'image par clustering KMeans.
                 </div>
@@ -204,7 +206,7 @@ class ResultRenderer:
         )
 
         return st.button(
-            "🎨 Analyser l'image",
+            ":material/palette: Analyser l'image",
             type="primary",
             key="analyze_button_main",
             help="Lance l'analyse des couleurs dominantes.",
@@ -226,13 +228,13 @@ class ResultRenderer:
 
         with st.sidebar:
 
-            st.markdown("#### 🛠️ Paramètres de retouche")
+            st.markdown("#### :material/tune: Paramètres de retouche")
 
             # Bouton de réinitialisation.
             # Placé avant les widgets pour que les valeurs par défaut
             # soient bien réinjectées dans l'interface.
             if st.button(
-                "↻ Réinitialiser les réglages",
+                ":material/restart_alt: Réinitialiser les réglages",
                 width="stretch",
             ):
                 for key, value in RETOUCH_DEFAULTS.items():
@@ -241,7 +243,7 @@ class ResultRenderer:
             # ================================================
             # Luminosité et couleur.
             # ================================================
-            with st.expander("💡 Luminosité et couleur", expanded=False):
+            with st.expander(":material/light_mode: Luminosité et couleur", expanded=False):
                 brightness = st.slider(
                     "Luminosité", 50, 150, 100,
                     key="brightness"
@@ -274,7 +276,7 @@ class ResultRenderer:
             # ================================================
             # Tons, teinte et canaux.
             # ================================================
-            with st.expander("🎨 Tons, teinte et canaux", expanded=True):
+            with st.expander(":material/color_lens: Tons, teinte et canaux", expanded=True):
                 shadows = st.slider(
                     "Ombres", -100, 100, 0,
                     key="shadows",
@@ -305,7 +307,7 @@ class ResultRenderer:
             # ================================================
             # Détail et effets.
             # ================================================
-            with st.expander("✨ Détail et effets", expanded=False):
+            with st.expander(":material/auto_awesome: Détail et effets", expanded=False):
                 sharpness = st.slider(
                     "Netteté", 0, 300, 100,
                     key="sharpness"
@@ -334,7 +336,7 @@ class ResultRenderer:
             # ================================================
             # Effets avancés (repliés par défaut).
             # ================================================
-            with st.expander("🧪 Effets avancés", expanded=False):
+            with st.expander(":material/science: Effets avancés", expanded=False):
                 posterize = st.slider(
                     "Postérisation (niveaux)",
                     0, 8, 0,
@@ -367,7 +369,7 @@ class ResultRenderer:
             # ================================================
             # Filtres artistiques et teinte colorée.
             # ================================================
-            with st.expander("🎭 Filtres artistiques", expanded=False):
+            with st.expander(":material/brush: Filtres artistiques", expanded=False):
                 artistic = st.selectbox(
                     "Style artistique",
                     options=ARTISTIC_FILTERS,
@@ -435,9 +437,10 @@ class ResultRenderer:
 
         # Étape 1 : affichage des deux versions côte à côte,
         # chacune dans un cadre pour bien les séparer.
+        # Le CSS est embarqué dans l'iframe (srcdoc = doc. séparée).
         html = (
-            '<div style="display:flex; flex-wrap:wrap; gap:16px; '
-            'align-items:flex-start;">'
+            IFRAME_CSS
+            + '<div class="img-pair">'
             + self._frame_html(image_rgb, "Image originale")
             + self._frame_html(edited_rgb, "Image retouchée")
             + '</div>'
@@ -455,7 +458,7 @@ class ResultRenderer:
         col_dl, col_tip = st.columns([1, 2])
         with col_dl:
             st.download_button(
-                label="⬇️ Télécharger l'image retouchée",
+                label=":material/download: Télécharger l'image retouchée",
                 data=buffer.getvalue(),
                 file_name="image_retouchee.png",
                 mime="image/png",
@@ -525,9 +528,10 @@ class ResultRenderer:
         self._section_title("Résultat visuel")
 
         # Affichage des deux images dans des cadres séparés.
+        # Le CSS est embarqué dans l'iframe (srcdoc = doc. séparée).
         html = (
-            '<div style="display:flex; flex-wrap:wrap; gap:16px; '
-            'align-items:flex-start;">'
+            IFRAME_CSS
+            + '<div class="img-pair">'
             + self._frame_html(image_rgb, "Image originale")
             + self._frame_html(
                 segmented_rgb,
@@ -642,7 +646,7 @@ class ResultRenderer:
         # Icône SVG de copie (style "feather").
         icone_copie = (
             '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" '
-            'stroke="#4F46E5" stroke-width="2" stroke-linecap="round" '
+            'stroke="#137C8B" stroke-width="2" stroke-linecap="round" '
             'stroke-linejoin="round">'
             '<path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>'
             '<rect x="8" y="2" width="8" height="4" rx="1" ry="1"/>'
@@ -678,11 +682,13 @@ class ResultRenderer:
         hex_list = ", ".join("'" + c.hex + "'" for c in couleurs)
 
         # Étape 2 : assemblage du HTML + JavaScript.
+        # Le CSS est embarqué dans l'iframe (srcdoc = doc. séparée).
         palette_html = f"""
+        {IFRAME_CSS}
         <div class="palette-wrap">{cartes}</div>
 
         <div class="palette-action">
-            <button onclick="copierTout()">📋 Copier toutes les couleurs</button>
+            <button onclick="copierTout()">Copier toutes les couleurs</button>
         </div>
 
         <div class="palette-message" id="message"></div>
@@ -872,9 +878,9 @@ class ResultRenderer:
 
         with col1:
             st.download_button(
-                label="📄 Télécharger JSON",
+                label=":material/description: Télécharger JSON",
                 data=json.dumps(json_data, ensure_ascii=False, indent=2),
-                file_name="analyse_couleurs.json",
+                file_name="imagesense_couleurs.json",
                 mime="application/json",
                 key="download_json",
                 width="stretch",
@@ -886,9 +892,9 @@ class ResultRenderer:
 
         with col2:
             st.download_button(
-                label="📊 Télécharger CSV",
+                label=":material/table_chart: Télécharger CSV",
                 data=csv_data,
-                file_name="analyse_couleurs.csv",
+                file_name="imagesense_couleurs.csv",
                 mime="text/csv",
                 key="download_csv",
                 width="stretch",

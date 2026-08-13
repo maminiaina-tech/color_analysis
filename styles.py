@@ -1,8 +1,31 @@
 # styles.py
 #
-# CSS global de l'application Streamlit.
-# Centralisé dans ce module pour un style cohérent
-# et facile à maintenir.
+# CSS de l'application Streamlit, centralisé pour un style
+# cohérent et facile à maintenir.
+#
+# Deux contextes distincts :
+#   - BASE_CSS   : styles de la page principale (hero, sidebar,
+#                  boutons, onglets, etc.). Injecté une seule fois
+#                  via st.markdown.
+#   - IFRAME_CSS : styles des composants rendus dans st.iframe
+#                  (images avant/après, palette de couleurs).
+#                  Le CSS de la page parente ne s'applique pas
+#                  dans une iframe : ce bloc est donc embarqué
+#                  directement dans chaque srcdoc.
+#
+# Palette océan (sarcelle / bleu-gris / ardoise) :
+#   #DCE8EB  gris bleu pâle    → fond de page
+#   #EFF5F6  blanc bleuté      → fond très clair / survols
+#   #B8CBD0  gris bleu         → bordures
+#   #709CA7  bleu-gris         → survols / accents secondaires
+#   #137C8B  sarcelle          → couleur principale
+#   #7A90A4  gris ardoise      → texte secondaire / atténué
+#   #344D59  ardoise foncée    → texte / accents à fort contraste
+
+
+# ============================================================
+# Styles de la page principale.
+# ============================================================
 
 BASE_CSS = """
 <style>
@@ -16,7 +39,11 @@ html, body, [class*="css"] {
 }
 
 .stApp {
-    background: linear-gradient(180deg, #FFFFFF 0%, #F8FAFC 100%);
+    background: linear-gradient(180deg, #DCE8EB 0%, #EFF5F6 100%);
+}
+
+a {
+    color: #137C8B;
 }
 
 /* ============================================================
@@ -24,12 +51,12 @@ html, body, [class*="css"] {
    ============================================================ */
 
 .hero {
-    background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 55%, #0EA5E9 100%);
+    background: linear-gradient(135deg, #137C8B 0%, #709CA7 100%);
     border-radius: 18px;
     padding: 2.2rem 2.4rem;
     color: #FFFFFF;
     margin-bottom: 1.6rem;
-    box-shadow: 0 12px 30px rgba(79, 70, 229, 0.30);
+    box-shadow: 0 12px 30px rgba(19, 124, 139, 0.35);
     position: relative;
     overflow: hidden;
 }
@@ -41,7 +68,7 @@ html, body, [class*="css"] {
     right: -10%;
     width: 340px;
     height: 340px;
-    background: rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.25);
     border-radius: 50%;
 }
 
@@ -51,14 +78,16 @@ html, body, [class*="css"] {
     letter-spacing: -0.02em;
     margin: 0 0 0.4rem 0;
     line-height: 1.2;
+    color: #FFFFFF;
 }
 
 .hero-subtitle {
     font-size: 1.02rem;
-    opacity: 0.92;
+    opacity: 0.95;
     margin: 0;
     max-width: 720px;
     line-height: 1.55;
+    color: rgba(255, 255, 255, 0.92);
 }
 
 .hero-badges {
@@ -69,13 +98,14 @@ html, body, [class*="css"] {
 }
 
 .hero-badge {
-    background: rgba(255, 255, 255, 0.16);
-    border: 1px solid rgba(255, 255, 255, 0.30);
+    background: rgba(255, 255, 255, 0.14);
+    border: 1px solid rgba(255, 255, 255, 0.35);
     border-radius: 999px;
     padding: 4px 12px;
     font-size: 0.78rem;
     font-weight: 600;
     letter-spacing: 0.02em;
+    color: #FFFFFF;
 }
 
 /* ============================================================
@@ -84,21 +114,27 @@ html, body, [class*="css"] {
 
 [data-testid="stSidebar"] {
     background: #FFFFFF;
-    border-right: 1px solid #E2E8F0;
+    border-right: 1px solid #B8CBD0;
 }
 
 [data-testid="stSidebar"] h1,
 [data-testid="stSidebar"] h2,
-[data-testid="stSidebar"] h3 {
+[data-testid="stSidebar"] h3,
+[data-testid="stSidebar"] h4 {
     font-size: 0.95rem;
     font-weight: 700;
-    color: #1E293B;
+    color: #344D59;
 }
 
 [data-testid="stSidebar"] [data-testid="stExpander"] {
-    border: 1px solid #E2E8F0;
+    border: 1px solid #B8CBD0;
     border-radius: 10px;
-    background: #F8FAFC;
+    background: #E8F1F3;
+}
+
+[data-testid="stSidebar"] [data-testid="stExpander"] summary {
+    color: #344D59;
+    font-weight: 600;
 }
 
 /* ============================================================
@@ -113,20 +149,23 @@ html, body, [class*="css"] {
 }
 
 .stButton > button[kind="primary"] {
-    background: linear-gradient(135deg, #4F46E5, #7C3AED);
+    background: #137C8B;
+    color: #FFFFFF;
     border: none;
-    box-shadow: 0 6px 16px rgba(79, 70, 229, 0.35);
+    box-shadow: 0 6px 16px rgba(19, 124, 139, 0.45);
 }
 
 .stButton > button[kind="primary"]:hover {
+    background: #709CA7;
+    color: #FFFFFF;
     transform: translateY(-1px);
-    box-shadow: 0 10px 22px rgba(79, 70, 229, 0.45);
+    box-shadow: 0 10px 22px rgba(19, 124, 139, 0.55);
 }
 
 .stButton > button:not([kind="primary"]):hover,
 .stDownloadButton > button:hover {
-    border-color: #4F46E5;
-    color: #4F46E5;
+    border-color: #137C8B;
+    color: #137C8B;
 }
 
 /* ============================================================
@@ -135,7 +174,7 @@ html, body, [class*="css"] {
 
 .stTabs [data-baseweb="tab-list"] {
     gap: 6px;
-    background: #F1F5F9;
+    background: #DCE8EB;
     padding: 6px;
     border-radius: 12px;
 }
@@ -144,13 +183,13 @@ html, body, [class*="css"] {
     border-radius: 8px;
     padding: 8px 20px;
     font-weight: 600;
-    color: #475569;
+    color: #344D59;
 }
 
 .stTabs [aria-selected="true"] {
     background: #FFFFFF;
-    color: #4F46E5;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+    color: #137C8B;
+    box-shadow: 0 2px 6px rgba(19, 124, 139, 0.15);
 }
 
 /* ============================================================
@@ -158,15 +197,15 @@ html, body, [class*="css"] {
    ============================================================ */
 
 [data-testid="stFileUploader"] {
-    background: #F8FAFC;
-    border: 2px dashed #CBD5E1;
+    background: #DCE8EB;
+    border: 2px dashed #709CA7;
     border-radius: 14px;
     padding: 8px;
 }
 
 [data-testid="stFileUploader"]:hover {
-    border-color: #4F46E5;
-    background: #EEF2FF;
+    border-color: #137C8B;
+    background: #EFF5F6;
 }
 
 /* ============================================================
@@ -175,20 +214,20 @@ html, body, [class*="css"] {
 
 [data-testid="stMetric"] {
     background: #FFFFFF;
-    border: 1px solid #E2E8F0;
+    border: 1px solid #B8CBD0;
     border-radius: 14px;
     padding: 18px 20px;
-    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.06);
+    box-shadow: 0 4px 14px rgba(19, 124, 139, 0.10);
 }
 
 [data-testid="stMetricLabel"] {
     font-weight: 600;
-    color: #64748B;
+    color: #7A90A4;
 }
 
 [data-testid="stMetricValue"] {
     font-weight: 800;
-    color: #1E293B;
+    color: #344D59;
 }
 
 /* ============================================================
@@ -198,22 +237,102 @@ html, body, [class*="css"] {
 [data-testid="stDataFrame"] {
     border-radius: 12px;
     overflow: hidden;
-    border: 1px solid #E2E8F0;
+    border: 1px solid #B8CBD0;
 }
 
 /* ============================================================
-   Cadres d'image
+   Sections (titres)
    ============================================================ */
+
+.section-title {
+    font-size: 1.15rem;
+    font-weight: 800;
+    color: #344D59;
+    margin: 0.2rem 0 0.9rem 0;
+    padding-bottom: 0.4rem;
+    border-bottom: 2px solid #B8CBD0;
+    letter-spacing: -0.01em;
+}
+
+/* ============================================================
+   Pied de page
+   ============================================================ */
+
+.footer {
+    margin-top: 3rem;
+    padding-top: 1.2rem;
+    border-top: 1px solid #B8CBD0;
+    text-align: center;
+    color: #7A90A4;
+    font-size: 0.8rem;
+}
+
+/* ============================================================
+   Divers
+   ============================================================ */
+
+.stMarkdown hr {
+    border-color: #B8CBD0;
+}
+
+[data-testid="stAlert"] {
+    border-radius: 12px;
+}
+
+.stSpinner > div {
+    border-top-color: #137C8B !important;
+}
+
+div.stBlockquote {
+    border-left: 4px solid #137C8B;
+}
+
+/* Icônes Streamlit (Material Symbols) à la couleur principale */
+.material-symbols-outlined {
+    color: #137C8B;
+}
+
+</style>
+"""
+
+
+# ============================================================
+# Styles embarqués dans les iframes (st.iframe / srcdoc).
+# ============================================================
+
+IFRAME_CSS = """
+<style>
+body {
+    margin: 0;
+    padding: 0;
+    font-family: "Inter", "Segoe UI", system-ui, sans-serif;
+}
+
+/* ============================================================
+   Cadres d'image — avant / après strictement côte à côte
+   ============================================================ */
+
+.img-pair {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 16px;
+    align-items: flex-start;
+}
+
+.img-pair .img-card {
+    flex: 1 1 0;
+    min-width: 0;
+}
 
 .img-card {
     background: #FFFFFF;
-    border: 1px solid #E2E8F0;
+    border: 1px solid #B8CBD0;
     border-radius: 14px;
     padding: 12px;
-    box-shadow: 0 6px 18px rgba(15, 23, 42, 0.07);
+    box-shadow: 0 6px 18px rgba(19, 124, 139, 0.12);
     text-align: center;
-    flex: 1 1 300px;
-    min-width: 280px;
+    flex: 1 1 0;
+    min-width: 0;
 }
 
 .img-card img {
@@ -228,7 +347,7 @@ html, body, [class*="css"] {
     margin-top: 10px;
     font-weight: 700;
     font-size: 0.9rem;
-    color: #1E293B;
+    color: #344D59;
     letter-spacing: 0.01em;
 }
 
@@ -245,7 +364,7 @@ html, body, [class*="css"] {
 .palette-card {
     position: relative;
     width: 148px;
-    border: 1px solid #E2E8F0;
+    border: 1px solid #B8CBD0;
     border-radius: 14px;
     padding: 10px;
     background: #FFFFFF;
@@ -255,13 +374,13 @@ html, body, [class*="css"] {
 
 .palette-card:hover {
     transform: translateY(-4px);
-    box-shadow: 0 12px 24px rgba(15, 23, 42, 0.14);
+    box-shadow: 0 12px 24px rgba(19, 124, 139, 0.20);
 }
 
 .palette-swatch {
     height: 56px;
     border-radius: 8px;
-    border: 1px solid #E2E8F0;
+    border: 1px solid #B8CBD0;
 }
 
 .palette-rank {
@@ -271,7 +390,7 @@ html, body, [class*="css"] {
     width: 22px;
     height: 22px;
     border-radius: 50%;
-    background: rgba(15, 23, 42, 0.72);
+    background: rgba(52, 77, 89, 0.80);
     color: #FFFFFF;
     font-size: 0.72rem;
     font-weight: 700;
@@ -284,17 +403,17 @@ html, body, [class*="css"] {
     margin-top: 8px;
     font-weight: 700;
     font-size: 0.86rem;
-    color: #1E293B;
+    color: #344D59;
 }
 
 .palette-meta {
     font-size: 0.75rem;
-    color: #64748B;
+    color: #7A90A4;
 }
 
 .palette-hex {
     font-size: 0.72rem;
-    color: #4F46E5;
+    color: #137C8B;
     font-weight: 600;
     letter-spacing: 0.03em;
 }
@@ -308,7 +427,7 @@ html, body, [class*="css"] {
     background: rgba(255, 255, 255, 0.94);
     border-radius: 6px;
     padding: 4px;
-    box-shadow: 0 2px 6px rgba(15, 23, 42, 0.15);
+    box-shadow: 0 2px 6px rgba(52, 77, 89, 0.18);
     transition: opacity 0.15s ease;
 }
 
@@ -317,26 +436,26 @@ html, body, [class*="css"] {
 }
 
 .palette-copy:hover {
-    background: #EEF2FF;
+    background: #DCE8EB;
 }
 
 .palette-action button {
     margin-top: 14px;
     padding: 8px 18px;
-    border: 1px solid #CBD5E1;
+    border: 1px solid #B8CBD0;
     border-radius: 10px;
-    background: #F8FAFC;
+    background: #E8F1F3;
     font-weight: 600;
     font-size: 0.85rem;
-    color: #334155;
+    color: #344D59;
     cursor: pointer;
     transition: all 0.15s ease;
 }
 
 .palette-action button:hover {
-    border-color: #4F46E5;
-    background: #EEF2FF;
-    color: #4F46E5;
+    border-color: #137C8B;
+    background: #DCE8EB;
+    color: #137C8B;
 }
 
 .palette-message {
@@ -344,63 +463,15 @@ html, body, [class*="css"] {
     font-weight: 600;
     min-height: 18px;
     font-size: 0.85rem;
-    color: #4F46E5;
+    color: #137C8B;
 }
-
-/* ============================================================
-   Sections (titres)
-   ============================================================ */
-
-.section-title {
-    font-size: 1.15rem;
-    font-weight: 800;
-    color: #1E293B;
-    margin: 0.2rem 0 0.9rem 0;
-    padding-bottom: 0.4rem;
-    border-bottom: 2px solid #EEF2FF;
-    letter-spacing: -0.01em;
-}
-
-/* ============================================================
-   Pied de page
-   ============================================================ */
-
-.footer {
-    margin-top: 3rem;
-    padding-top: 1.2rem;
-    border-top: 1px solid #E2E8F0;
-    text-align: center;
-    color: #94A3B8;
-    font-size: 0.8rem;
-}
-
-/* ============================================================
-   Divers
-   ============================================================ */
-
-.stMarkdown hr {
-    border-color: #E2E8F0;
-}
-
-[data-testid="stAlert"] {
-    border-radius: 12px;
-}
-
-.stSpinner > div {
-    border-top-color: #4F46E5 !important;
-}
-
-div.stBlockquote {
-    border-left: 4px solid #4F46E5;
-}
-
 </style>
 """
 
 
 def inject_global_css() -> None:
     """
-    Injecte le CSS global dans l'application Streamlit.
+    Injecte le CSS de la page principale dans l'application Streamlit.
     À appeler une seule fois, en début de script.
     """
     import streamlit as st

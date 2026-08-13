@@ -1,14 +1,14 @@
 # ============================================================
 # Configuration du thème Streamlit.
-# Palette professionnelle : indigo / slate / neutres chauds.
+# Palette océan : sarcelle / bleu-gris / ardoise.
 # ============================================================
 
 [theme]
 base = "light"
-primaryColor = "#4F46E5"
-backgroundColor = "#FFFFFF"
-secondaryBackgroundColor = "#F1F5F9"
-textColor = "#1E293B"
+primaryColor = "#137C8B"
+backgroundColor = "#E8F1F3"
+secondaryBackgroundColor = "#D6E4E7"
+textColor = "#344D59"
 font = "sans serif"
 
 [server]

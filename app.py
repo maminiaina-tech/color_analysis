@@ -21,8 +21,8 @@ from image_editor import ImageEditor
 # ============================================================
 
 st.set_page_config(
-    page_title="Chroma Studio — Analyse & retouche d'images",
-    page_icon="🎨",
+    page_title="ImageSense — Analyse & retouche d'images",
+    page_icon=":material/palette:",
     layout="wide",
     initial_sidebar_state="expanded",
 )
@@ -41,7 +41,7 @@ inject_global_css()
 st.markdown(
     """
     <div class="hero">
-        <div class="hero-title">Chroma Studio</div>
+        <div class="hero-title">ImageSense</div>
         <div class="hero-subtitle">
             Analyse colorimétrique professionnelle et retouche d'image en temps réel.
             Téléversez une photo, retouchez-la, puis extrayez automatiquement
@@ -62,16 +62,7 @@ st.markdown(
 # Zone d'upload de l'image.
 # ============================================================
 
-st.markdown(
-    """
-    <div style="display:flex; align-items:baseline; gap:10px; margin-bottom:2px;">
-        <span style="font-size:1.05rem; font-weight:700; color:#1E293B;">
-            📤 Téléverser une image
-        </span>
-    </div>
-    """,
-    unsafe_allow_html=True,
-)
+st.markdown("#### :material/cloud_upload: Téléverser une image")
 
 uploaded_file = st.file_uploader(
     "Choisissez une image au format JPG, PNG ou WEBP",
@@ -117,22 +108,14 @@ renderer = ResultRenderer()
 
 if uploaded_file is None:
 
-    st.markdown(
-        """
-        <div style="background:#EEF2FF; border:1px solid #C7D2FE; border-radius:14px;
-                    padding:22px 24px; margin-top:10px; text-align:center;">
-            <div style="font-size:2rem;">🖼️</div>
-            <div style="font-size:1.05rem; font-weight:700; color:#312E81; margin-top:6px;">
-                Aucune image pour le moment
-            </div>
-            <div style="color:#4338CA; font-size:0.9rem; margin-top:4px;">
-                Téléversez une image ci-dessus pour commencer la retouche
-                et l'analyse des couleurs.
-            </div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+    col_centre1, col_centre2, col_centre3 = st.columns([1, 2, 1])
+    with col_centre2:
+        with st.container(border=True):
+            st.markdown("## :material/image: Aucune image pour le moment")
+            st.write(
+                "Téléversez une image ci-dessus pour commencer la retouche "
+                "et l'analyse des couleurs."
+            )
 
 else:
 
@@ -163,7 +146,7 @@ else:
     # Étape 5 : onglets Retouche / Analyse.
     # ========================================================
     tab_retouche, tab_analyse = st.tabs(
-        ["🛠️ Retouche d'image", "🎨 Analyse des couleurs"]
+        [":material/tune: Retouche d'image", ":material/palette: Analyse des couleurs"]
     )
 
     # --------------------------------------------------------
@@ -234,8 +217,7 @@ else:
 st.markdown(
     """
     <div class="footer">
-        Chroma Studio · Projet de vision par ordinateur (Master 2) ·
-        Retouche &amp; analyse colorimétrique d'images
+        ImageSense · Retouche &amp; analyse colorimétrique d'images
     </div>
     """,
     unsafe_allow_html=True,

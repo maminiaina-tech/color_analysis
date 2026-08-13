@@ -1,8 +1,8 @@
-# Analyse colorimétrique d'images
+# ImageSense
 
-**Analyse colorimétrique d'images : extraction automatique des couleurs dominantes, estimation de leurs proportions et classification par clustering.**
+**ImageSense : analyse colorimétrique d'images — extraction automatique des couleurs dominantes, estimation de leurs proportions et classification par clustering.**
 
-Application web développée avec **Python** et **Streamlit**, dans le cadre du cours d'**analyse d'images / vision par ordinateur** (Master 2).
+Application web développée avec **Python** et **Streamlit**.
 
 ---
 
@@ -10,7 +10,7 @@ Application web développée avec **Python** et **Streamlit**, dans le cadre du 
 
 L'interface a été conçue pour un rendu professionnel :
 
-- **Thème personnalisé** défini dans `.streamlit/config.toml` (palette indigo, typographie soignée) ;
+- **Thème personnalisé** défini dans `.streamlit/config.toml` (palette océan : sarcelle, bleu-gris, ardoise) ;
 - **Bandeau d'en-tête** (hero) avec dégradé et badges récapitulatifs des fonctionnalités ;
 - **CSS global centralisé** dans `styles.py` : cartes de métriques, cadres d'images, palette de couleurs avec rang, effet de survol, copie des codes HEX ;
 - **Barre latérale organisée** en sections repliables (luminosité, tons, détail, effets avancés, filtres artistiques) ;
@@ -72,7 +72,7 @@ Le pipeline d'analyse suit les étapes suivantes :
 ## Structure du projet
 
 ```text
-analyse_couleurs/
+ImageSense/
 │
 ├── app.py                  # Point d'entrée de l'application Streamlit
 ├── constants.py            # Constantes et paramètres du projet
