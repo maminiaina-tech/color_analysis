@@ -26,6 +26,8 @@ from constants import (
 
 from styles import IFRAME_CSS
 
+from histogram_processor import HistogramProcessor, ZONES
+
 
 # ============================================================
 # Valeurs par défaut des réglages de retouche.
@@ -469,6 +471,340 @@ class ResultRenderer:
             st.caption(
                 "Astuce : les réglages sont appliqués en direct. "
                 "Pensez à réinitialiser avant de tester un autre effet."
+            )
+
+    # ========================================================
+    # Histogrammes (luminance + canaux + statistiques).
+    # ========================================================
+
+    def _luminance_chart(
+        self,
+        processor: HistogramProcessor,
+        image_rgb,
+        edited_rgb
+    ) -> alt.LayerChart:
+        """
+        Construit l'histogramme de luminance avant / après avec
+        les zones tonales et les lignes de luminosité moyenne.
+        """
+        df = processor.compare(image_rgb, edited_rgb)
+        stats_avant = processor.statistiques(image_rgb)
+        stats_apres = processor.statistiques(edited_rgb)
+
+        # Valeur maximale pour délimiter la hauteur du graphique.
+        y_max = float(df["frequence"].max())
+
+        # Palette de l'histogramme (4 couleurs retenues) :
+        #   - Originale : #5D7052 (vert éteint)
+        #   - Retouchée : #C18845 (ocre)
+        #   - Ombres    : #6A645A (gris taupe)
+        #   - Tons moyens / Hautes lumières : #F0BE86 / #E3CD8B
+        domain = ["Originale", "Retouchée"]
+        range_colors = ["#5D7052", "#C18845"]
+
+        # Étape 1 : zones tonales en arrière-plan.
+        zones_df = pd.DataFrame(ZONES)
+        zones_df["y_haut"] = y_max
+        zones_df["y_bas"] = 0.0
+
+        zone_chart = (
+            alt.Chart(zones_df)
+            .mark_rect(opacity=0.30)
+            .encode(
+                x=alt.X(
+                    "debut:Q",
+                    scale=alt.Scale(domain=[0, 256]),
+                ),
+                x2="fin:Q",
+                y=alt.Y("y_haut:Q"),
+                y2="y_bas:Q",
+                color=alt.Color(
+                    "nom:N",
+                    scale=alt.Scale(
+                        domain=["Ombres", "Tons moyens", "Hautes lumières"],
+                        range=["#6A645A", "#F0BE86", "#E3CD8B"],
+                    ),
+                    legend=alt.Legend(
+                        title="Zones tonales",
+                        orient="bottom",
+                    ),
+                ),
+            )
+        )
+
+        # Étape 2 : courbes avant / après superposées.
+        # line=True dessine le contour de la courbe en pleine couleur
+        # pour bien distinguer les deux versions.
+        area_chart = (
+            alt.Chart(df)
+            .mark_area(opacity=0.6, interpolate="monotone", line=True)
+            .encode(
+                x=alt.X(
+                    "valeur:Q",
+                    title="Luminance (0 = noir → 255 = blanc)",
+                ),
+                y=alt.Y(
+                    "frequence:Q",
+                    title="Nombre de pixels",
+                    stack=None,
+                ),
+                color=alt.Color(
+                    "image:N",
+                    scale=alt.Scale(domain=domain, range=range_colors),
+                    legend=alt.Legend(title="Image", orient="top"),
+                ),
+                tooltip=[
+                    alt.Tooltip("image:N", title="Image"),
+                    alt.Tooltip(
+                        "valeur:Q",
+                        title="Luminance",
+                        format=".0f",
+                    ),
+                    alt.Tooltip(
+                        "frequence:Q",
+                        title="Pixels",
+                        format=",",
+                    ),
+                ],
+            )
+        )
+
+        # Étape 3 : lignes des luminances moyennes.
+        rule_df = pd.DataFrame(
+            [
+                {"moyenne": stats_avant["moyenne"], "image": "Originale"},
+                {"moyenne": stats_apres["moyenne"], "image": "Retouchée"},
+            ]
+        )
+
+        rule_chart = (
+            alt.Chart(rule_df)
+            .mark_rule(strokeDash=[5, 3], size=1.8)
+            .encode(
+                x=alt.X("moyenne:Q"),
+                color=alt.Color(
+                    "image:N",
+                    scale=alt.Scale(domain=domain, range=range_colors),
+                    legend=None,
+                ),
+                tooltip=[
+                    alt.Tooltip("image:N", title="Image"),
+                    alt.Tooltip(
+                        "moyenne:Q",
+                        title="Luminance moyenne",
+                        format=".1f",
+                    ),
+                ],
+            )
+        )
+
+        # Étape 4 : assemblage des trois couches.
+        return (
+            alt.layer(zone_chart, area_chart, rule_chart)
+            .properties(height=320)
+        )
+
+    def _rgb_chart(
+        self,
+        processor: HistogramProcessor,
+        image_rgb,
+        title: str
+    ) -> alt.Chart:
+        """
+        Construit un histogramme superposant les canaux Rouge,
+        Vert et Bleu d'une image (style Photoshop).
+        """
+        df = processor.channel_histogram(image_rgb)
+
+        chart = (
+            alt.Chart(df)
+            .mark_area(opacity=0.55, interpolate="monotone", line=True)
+            .encode(
+                x=alt.X(
+                    "valeur:Q",
+                    title="Valeur du canal (0-255)",
+                ),
+                y=alt.Y(
+                    "frequence:Q",
+                    title="Nombre de pixels",
+                    stack=None,
+                ),
+                color=alt.Color(
+                    "canal:N",
+                    scale=alt.Scale(
+                        domain=["Rouge", "Vert", "Bleu"],
+                        range=["#C62828", "#2E7D32", "#1565C0"],
+                    ),
+                    legend=alt.Legend(
+                        title="Canal",
+                        orient="top",
+                    ),
+                ),
+                tooltip=[
+                    alt.Tooltip("canal:N", title="Canal"),
+                    alt.Tooltip(
+                        "valeur:Q",
+                        title="Valeur",
+                        format=".0f",
+                    ),
+                    alt.Tooltip(
+                        "frequence:Q",
+                        title="Pixels",
+                        format=",",
+                    ),
+                ],
+            )
+            .properties(title=title, height=300)
+        )
+
+        return chart
+
+    def render_histogram(self, image_rgb, edited_rgb):
+        """
+        Affiche des histogrammes complets de l'image avant
+        et après la retouche, dans l'esprit de Photoshop
+        et de Lightroom.
+
+        Trois onglets :
+        - "Luminance" : histogramme de luminance avant / après
+          avec les zones ombres / tons moyens / hautes lumières
+          et les lignes de luminosité moyenne ;
+        - "Canaux RVB" : histogrammes des canaux Rouge, Vert et
+          Bleu superposés, pour la version originale et retouchée ;
+        - "Statistiques" : tableau comparatif (moyenne, médiane,
+          écart-type, canaux, répartition tonale).
+
+        Paramètres :
+        - image_rgb : image originale ;
+        - edited_rgb : image retouchée.
+        """
+
+        self._section_title("Histogrammes")
+
+        processor = HistogramProcessor()
+        stats_avant = processor.statistiques(image_rgb)
+        stats_apres = processor.statistiques(edited_rgb)
+
+        tab_luma, tab_canaux, tab_stats = st.tabs(
+            [
+                ":material/show_chart: Luminance",
+                ":material/palette: Canaux RVB",
+                ":material/table_chart: Statistiques",
+            ]
+        )
+
+        # ----------------------------------------------------
+        # Onglet 1 : luminance avant / après.
+        # ----------------------------------------------------
+        with tab_luma:
+            st.altair_chart(
+                self._luminance_chart(processor, image_rgb, edited_rgb),
+                width="stretch",
+                theme=None,
+            )
+            st.caption(
+                "Répartition des luminosités : une image trop sombre "
+                "accumule les pixels à gauche, trop claire à droite. "
+                "La ligne en pointillés indique la luminance moyenne "
+                "de chaque version."
+            )
+
+        # ----------------------------------------------------
+        # Onglet 2 : canaux RVB avant / après.
+        # ----------------------------------------------------
+        with tab_canaux:
+            col_avant, col_apres = st.columns(2)
+            with col_avant:
+                st.altair_chart(
+                    self._rgb_chart(processor, image_rgb, "Originale"),
+                    width="stretch",
+                    theme=None,
+                )
+            with col_apres:
+                st.altair_chart(
+                    self._rgb_chart(processor, edited_rgb, "Retouchée"),
+                    width="stretch",
+                    theme=None,
+                )
+            st.caption(
+                "Histogrammes des canaux Rouge, Vert et Bleu superposés. "
+                "Ils montrent comment chaque réglage affecte chaque "
+                "canal de couleur."
+            )
+
+        # ----------------------------------------------------
+        # Onglet 3 : statistiques comparatives.
+        # ----------------------------------------------------
+        with tab_stats:
+            stat_df = pd.DataFrame(
+                [
+                    {
+                        "Image": "Originale",
+                        "Luminance moyenne": stats_avant["moyenne"],
+                        "Luminance médiane": stats_avant["mediane"],
+                        "Écart-type": stats_avant["ecart_type"],
+                        "R moyen": stats_avant["canaux"]["Rouge"]["moyenne"],
+                        "V moyen": stats_avant["canaux"]["Vert"]["moyenne"],
+                        "B moyen": stats_avant["canaux"]["Bleu"]["moyenne"],
+                        "Ombres (%)": stats_avant["ombres"],
+                        "Tons moyens (%)": stats_avant["tons_moyens"],
+                        "Hautes lumières (%)": stats_avant["hautes_lumieres"],
+                    },
+                    {
+                        "Image": "Retouchée",
+                        "Luminance moyenne": stats_apres["moyenne"],
+                        "Luminance médiane": stats_apres["mediane"],
+                        "Écart-type": stats_apres["ecart_type"],
+                        "R moyen": stats_apres["canaux"]["Rouge"]["moyenne"],
+                        "V moyen": stats_apres["canaux"]["Vert"]["moyenne"],
+                        "B moyen": stats_apres["canaux"]["Bleu"]["moyenne"],
+                        "Ombres (%)": stats_apres["ombres"],
+                        "Tons moyens (%)": stats_apres["tons_moyens"],
+                        "Hautes lumières (%)": stats_apres["hautes_lumieres"],
+                    },
+                ]
+            )
+
+            st.dataframe(
+                stat_df,
+                width="stretch",
+                hide_index=True,
+                column_config={
+                    "Luminance moyenne": st.column_config.NumberColumn(
+                        format="%.1f"
+                    ),
+                    "Luminance médiane": st.column_config.NumberColumn(
+                        format="%.1f"
+                    ),
+                    "Écart-type": st.column_config.NumberColumn(
+                        format="%.1f"
+                    ),
+                    "R moyen": st.column_config.NumberColumn(
+                        format="%.1f"
+                    ),
+                    "V moyen": st.column_config.NumberColumn(
+                        format="%.1f"
+                    ),
+                    "B moyen": st.column_config.NumberColumn(
+                        format="%.1f"
+                    ),
+                    "Ombres (%)": st.column_config.NumberColumn(
+                        format="%.1f"
+                    ),
+                    "Tons moyens (%)": st.column_config.NumberColumn(
+                        format="%.1f"
+                    ),
+                    "Hautes lumières (%)": st.column_config.NumberColumn(
+                        format="%.1f"
+                    ),
+                },
+            )
+            st.caption(
+                "La luminance moyenne et médiane indiquent la clarté "
+                "globale. L'écart-type mesure l'étalement des tons "
+                "(plus il est élevé, plus le contraste est fort). "
+                "Les pourcentages de zones résument la répartition "
+                "entre ombres, tons moyens et hautes lumières."
             )
 
     # ========================================================

@@ -14,6 +14,7 @@ L'interface a été conçue pour un rendu professionnel :
 - **Bandeau d'en-tête** (hero) avec dégradé et badges récapitulatifs des fonctionnalités ;
 - **CSS global centralisé** dans `styles.py` : cartes de métriques, cadres d'images, palette de couleurs avec rang, effet de survol, copie des codes HEX ;
 - **Barre latérale organisée** en sections repliables (luminosité, tons, détail, effets avancés, filtres artistiques) ;
+- **Histogrammes avant / après** dans l'onglet retouche (style Photoshop / Lightroom) : luminance avec zones tonales (ombres, tons moyens, hautes lumières), canaux Rouge / Vert / Bleu superposés, et statistiques comparatives (moyenne, médiane, écart-type) — mise à jour en direct à chaque réglage ;
 - **Graphique des proportions** coloré avec la couleur correspondante (Altair) ;
 - **Tableau détaillé** avec colonnes renommées et formatage.
 
@@ -28,6 +29,7 @@ Ce projet consiste à analyser une image uploadée par l'utilisateur afin d'en e
 ## Objectifs
 
 - Uploader une image (JPG, JPEG, PNG, WEBP) ;
+- Retoucher l'image en temps réel et visualiser l'histogramme de luminance avant / après ;
 - Extraire automatiquement les couleurs dominantes ;
 - Estimer la proportion de chaque couleur (pixels et pourcentage) ;
 - Classifier les couleurs par clustering (KMeans) ;
@@ -79,6 +81,7 @@ ImageSense/
 ├── models.py               # Classes de résultats (ColorResult, AnalysisMetadata)
 ├── image_processor.py      # Classe ImageProcessor
 ├── image_editor.py         # Classe ImageEditor (retouche façon Photoshop)
+├── histogram_processor.py  # Classe HistogramProcessor (histogramme de luminance)
 ├── color_processor.py      # Classe ColorProcessor
 ├── clustering_service.py   # Classe ClusteringService
 ├── color_analyzer.py       # Classe ColorAnalyzer (orchestration)

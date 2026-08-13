@@ -154,6 +154,7 @@ else:
     # --------------------------------------------------------
     with tab_retouche:
         renderer.render_retouch(original_rgb, edited_rgb)
+        renderer.render_histogram(original_rgb, edited_rgb)
 
     # --------------------------------------------------------
     # Onglet 2 : analyse des couleurs.

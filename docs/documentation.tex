@@ -1,0 +1,827 @@
+% ============================================================
+% ImageSense — Documentation technique
+% Compilation : pdflatex DOCUMENTATION.tex (ou latexmk)
+% ============================================================
+
+\documentclass[11pt,a4paper]{article}
+
+% ------------------------------------------------------------
+% Langue et encodage
+% ------------------------------------------------------------
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+
+% ------------------------------------------------------------
+% Géométrie et mise en page
+% ------------------------------------------------------------
+\usepackage[a4paper,margin=2.5cm]{geometry}
+\usepackage{setspace}
+\onehalfspacing
+
+% ------------------------------------------------------------
+% Mathématiques
+% ------------------------------------------------------------
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{mathtools}
+
+% ------------------------------------------------------------
+% Tableaux, couleurs, graphiques
+% ------------------------------------------------------------
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{graphicx}
+
+% ------------------------------------------------------------
+% Liens et PDF
+% ------------------------------------------------------------
+\usepackage[colorlinks=true,linkcolor=black,urlcolor=blue,citecolor=blue]{hyperref}
+
+% ------------------------------------------------------------
+% Titre et couleurs du document
+% ------------------------------------------------------------
+\definecolor{teal}{HTML}{137C8B}
+\definecolor{slate}{HTML}{344D59}
+
+\usepackage{titlesec}
+\titleformat{\section}{\Large\bfseries\color{teal}}{\thesection.}{0.6em}{}
+\titleformat{\subsection}{\large\bfseries\color{slate}}{\thesubsection.}{0.6em}{}
+\titleformat{\subsubsection}{\normalsize\bfseries}{\thesubsubsection.}{0.6em}{}
+
+% ------------------------------------------------------------
+% Styles de code
+% ------------------------------------------------------------
+\lstset{
+  basicstyle=\ttfamily\footnotesize,
+  frame=single,
+  breaklines=true,
+  columns=fullflexible,
+  backgroundcolor=\color{gray!8},
+  rulecolor=\color{gray!50},
+}
+
+% ------------------------------------------------------------
+% Métadonnées du document
+% ------------------------------------------------------------
+\title{\Huge\color{teal} ImageSense \\[0.4em]
+       \Large Documentation technique et modèles mathématiques}
+\author{Projet d'analyse colorimétrique d'images}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+\thispagestyle{empty}
+\newpage
+
+% ============================================================
+% TABLE DES MATIÈRES
+% ============================================================
+\tableofcontents
+\newpage
+
+% ============================================================
+% RÉSUMÉ (non numéroté)
+% ============================================================
+\section*{Résumé}
+\addcontentsline{toc}{section}{Résumé}
+
+\textbf{ImageSense} est une application web d'analyse colorimétrique et de
+retouche d'image en temps réel. L'utilisateur téléverse une image
+(JPG, PNG, WEBP), la retouche via une barre latérale inspirée de Photoshop
+(luminosité, contraste, saturation, gamma, exposition, température,
+vibrance, vignettage, filtres artistiques\ldots), puis lance une analyse qui
+extrait automatiquement les \textbf{couleurs dominantes}, estime leurs
+\textbf{proportions} et les classe par \textbf{clustering KMeans} dans
+l'espace perceptuel \textbf{CIELAB}.
+
+Le nombre de couleurs est soit choisi manuellement, soit déterminé
+automatiquement par optimisation du \textbf{score de silhouette} sur un
+intervalle $K \in [2, 8]$. Chaque couleur extraite est nommée
+approximativement (bleu, vert, gris\ldots) par recherche du plus proche
+voisin dans un dictionnaire de 67 couleurs de référence, mesurée par
+\textbf{distance euclidienne dans LAB} ($\Delta E$).
+
+Le pipeline repose sur : conversion \textbf{RGB $\rightarrow$ LAB},
+échantillonnage aléatoire ($\leq 30\,000$ pixels), entraînement
+\textbf{KMeans} (10 initialisations), calcul des proportions par comptage
+de clusters, reconstruction d'une \textbf{image segmentée}, puis rendu
+interactif (palette, graphique de proportions, tableau détaillé) et
+\textbf{export JSON / CSV}. Une fonctionnalité de retouche intégrée
+affiche les \textbf{histogrammes de luminance avant/après} (ombres, tons
+moyens, hautes lumières) avec statistiques comparatives, mis à jour en
+direct.
+
+\paragraph{Mots-clés :} vision par ordinateur, couleurs dominantes,
+CIELAB, KMeans, score de silhouette, histogramme, retouche d'image,
+Streamlit.
+
+% ============================================================
+% ABSTRACT (non numéroté)
+% ============================================================
+\section*{Abstract}
+\addcontentsline{toc}{section}{Abstract}
+
+ImageSense is a web application for colorimetric image analysis and
+real-time photo editing. The user uploads an image (JPG, PNG, WEBP), edits
+it through a Photoshop-inspired sidebar (brightness, contrast, saturation,
+gamma, exposure, temperature, vibrance, vignetting, artistic filters\ldots),
+then triggers an analysis that automatically extracts \textbf{dominant
+colors}, estimates their \textbf{proportions}, and classifies them via
+\textbf{KMeans clustering} in the perceptually-uniform \textbf{CIELAB}
+color space.
+
+The number of colors is either set manually or selected automatically by
+maximizing the \textbf{silhouette score} over $K \in [2, 8]$. Each
+extracted color is roughly named (blue, green, gray\ldots) by
+nearest-neighbor search against a dictionary of 67 reference colors, using
+\textbf{Euclidean distance in LAB space} ($\Delta E$).
+
+The pipeline relies on: \textbf{RGB $\rightarrow$ LAB} conversion, random
+pixel sampling ($\leq 30{,}000$ pixels), \textbf{KMeans} training (10
+initializations), proportion computation by cluster counting, reconstruction
+of a \textbf{segmented image}, then interactive rendering (palette,
+proportion chart, detailed table) and \textbf{JSON / CSV export}. An
+integrated editing module displays \textbf{before/after luminance
+histograms} (shadows, midtones, highlights) with comparative statistics,
+updated live.
+
+\paragraph{Keywords:} computer vision, dominant colors, CIELAB, KMeans,
+silhouette score, histogram, image editing, Streamlit.
+
+% ============================================================
+% 1. INTRODUCTION
+% ============================================================
+\section{Introduction}
+
+L'analyse des couleurs d'une image est un problème classique de vision par
+ordinateur, utilisé dans les domaines du design, du marketing, de la
+photographie et du e-commerce. L'objectif est de réduire une image (des
+centaines de milliers de pixels) à un petit ensemble de couleurs
+représentatives accompagnées de leurs proportions.
+
+La difficulté principale est que l'espace \textbf{RGB} n'est pas
+\textbf{perceptuellement uniforme} : une distance euclidienne dans RGB ne
+reflète pas la distance perçue par l'œil humain. ImageSense répond à ce
+problème en travaillant dans l'espace \textbf{CIELAB}, conçu pour que la
+distance euclidienne y approxime la différence perceptuelle, et en
+utilisant \textbf{KMeans} pour regrouper les pixels en clusters de couleurs
+dominantes.
+
+Ce document présente l'architecture du projet, puis détaille les modèles
+mathématiques sous-jacents : conversions colorimétriques, clustering,
+métriques de qualité et modèles de retouche.
+
+% ============================================================
+% 2. CONTEXTE ET OBJECTIFS
+% ============================================================
+\section{Contexte et objectifs}
+
+Le projet part d'un constat : extraire les couleurs dominantes d'une image
+de façon fiable nécessite un espace colorimétrique perceptuel et une
+méthode de clustering robuste. Le score de silhouette permet en outre
+d'automatiser le choix du nombre de couleurs.
+
+\subsection{Objectifs fonctionnels}
+
+\begin{itemize}
+  \item Téléverser une image (JPG, JPEG, PNG, WEBP);
+  \item Retoucher l'image en temps réel et visualiser l'histogramme de
+        luminance avant / après;
+  \item Extraire automatiquement les couleurs dominantes;
+  \item Estimer la proportion de chaque couleur (pixels et pourcentage);
+  \item Classifier les couleurs par clustering (KMeans);
+  \item Choisir le nombre de couleurs automatiquement (silhouette) ou
+        manuellement;
+  \item Nommer approximativement chaque couleur (rouge, bleu, gris,
+        etc.);
+  \item Générer une image segmentée par clusters;
+  \item Exporter les résultats en JSON et CSV.
+\end{itemize}
+
+\subsection{Contraintes techniques}
+
+\begin{itemize}
+  \item Limiter le temps de calcul par redimensionnement (taille max
+        $1\,000$~px) et échantillonnage ($\leq 30\,000$ pixels) ;
+  \item Assurer la reproductibilité via une graine aléatoire fixe
+        ($\texttt{RANDOM\_STATE} = 42$);
+  \item Réaliser tous les traitements avec NumPy / scikit-learn /
+        scikit-image.
+\end{itemize}
+
+% ============================================================
+% 3. ARCHITECTURE LOGICIELLE
+% ============================================================
+\section{Architecture logicielle}
+
+\subsection{Vue d'ensemble}
+
+L'application suit une architecture modulaire à \textbf{injection de
+dépendances} : le module central \texttt{ColorAnalyzer} orchestre des
+services indépendants, ce qui facilite les tests et la maintenance.
+
+\begin{lstlisting}[language=bash]
+ImageSense/
+|
+|-- app.py                  # Point d'entree Streamlit (orchestration UI)
+|-- constants.py            # Constantes : couleurs de reference, bornes K, seuils
+|-- models.py               # Dataclasses ColorResult, AnalysisMetadata
+|-- image_processor.py      # Chargement, redimensionnement, echantillonnage
+|-- image_editor.py         # Retouche facon Photoshop (27 reglages)
+|-- histogram_processor.py  # Histogrammes luminance/canaux, statistiques tonales
+|-- color_processor.py      # Conversions RGB<->LAB, RGB->HEX, nommage des couleurs
+|-- clustering_service.py   # KMeans, choix automatique de K (silhouette)
+|-- color_analyzer.py       # Pipeline d'analyse complet (orchestrateur)
+|-- result_renderer.py      # Rendu Streamlit : sidebar, images, palette, tableau
+|-- styles.py               # CSS global + CSS iframe
+|-- .streamlit/config.toml  # Theme ocean Streamlit
+|-- requirements.txt        # Dependances Python
++-- DOCUMENTATION.tex       # Ce document
+\end{lstlisting}
+
+\subsection{Description des modules}
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{@{}p{4.2cm}p{11cm}@{}}
+\toprule
+\textbf{Module} & \textbf{Responsabilité} \\
+\midrule
+\texttt{app.py} &
+Configure la page, injecte le CSS, gère l'upload, les onglets
+Retouche/Analyse et le cycle de session. \\
+\texttt{constants.py} &
+\texttt{REFERENCE\_COLORS} (67 couleurs), formats acceptés, teintes,
+filtres, bornes $K_{\min}=2$, $K_{\max}=8$, $K_{\text{manuel, max}}=12$,
+\texttt{MAX\_SAMPLES}=30\,000, \texttt{RANDOM\_STATE}=42. \\
+\texttt{models.py} &
+\texttt{ColorResult} (rang, nom, rgb, hex, pixels, proportion, $\Delta E$)
+et \texttt{AnalysisMetadata} (dimensions, mode, K, silhouette). \\
+\texttt{ImageProcessor} &
+\texttt{load\_image} (PIL $\rightarrow$ RGB, \texttt{thumbnail}),
+\texttt{sample\_pixels} (tirage sans remise),
+\texttt{rebuild\_image\_from\_labels} (mapping labels $\rightarrow$
+couleurs). \\
+\texttt{ImageEditor} &
+Applique dans un ordre déterminé 27 réglages : noir \& blanc, sépia,
+filtres artistiques, canaux, température, teinte, vibrance, saturation,
+ombres/hautes lumières, exposition, gamma, luminosité, contraste, netteté,
+flou gaussien, grain, postérisation, solarisation, seuil, vignette,
+pixelisation, teinte colorée, négatif. \\
+\texttt{HistogramProcessor} &
+Luminance perceptuelle, histogramme luminance (64 bins) et canaux,
+comparaison avant/après, statistiques tonales. \\
+\texttt{ColorProcessor} &
+\texttt{rgb2lab} / \texttt{lab2rgb} (scikit-image), \texttt{rgb\_to\_hex},
+\texttt{get\_color\_name} (plus proche voisin LAB). \\
+\texttt{ClusteringService} &
+\texttt{choose\_best\_k} (silhouette sur $K \in [2,8]$), \texttt{fit}
+(KMeans, \texttt{n\_init}=10), \texttt{predict}. \\
+\texttt{ColorAnalyzer} &
+Enchaîne les étapes du pipeline et construit les objets de résultat. \\
+\texttt{ResultRenderer} &
+Rendu Streamlit : sidebar, hero, cartes de métriques, palette avec copie
+HEX, graphique Altair, tableau, exports. \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Cycle de vie de l'application}
+
+\begin{enumerate}
+  \item \textbf{Session initiale} --- pas d'image : écran vide avec
+        consigne de téléversement.
+  \item \textbf{Upload} --- les octets sont conservés dans
+        \texttt{st.session\_state["uploaded\_bytes"]} pour éviter un
+        re-téléversement.
+  \item \textbf{Retouche en temps réel} --- chaque réglage de la sidebar
+        déclenche \texttt{ImageEditor.apply()} et régénère les
+        histogrammes avant/après.
+  \item \textbf{Analyse} --- au clic sur le bouton,
+        \texttt{ColorAnalyzer.analyze()} est exécuté ; les résultats sont
+        stockés dans \texttt{st.session\_state}.
+  \item \textbf{Rendu} --- palette, graphique des proportions, tableau,
+        exports JSON/CSV.
+\end{enumerate}
+
+% ============================================================
+% 4. MODÈLES MATHÉMATIQUES
+% ============================================================
+\section{Modèles mathématiques}
+
+% ------------------------------------------------------------
+\subsection{Espace colorimétrique CIELAB}
+
+CIELAB est un espace perceptuellement quasi-uniforme : une différence de
+valeur y correspond environ à la même différence perçue, quelle que soit la
+région de l'espace.
+
+\begin{itemize}
+  \item $L^*$ : clarté, $L^* \in [0, 100]$ (noir $\rightarrow$ blanc) ;
+  \item $a^*$ : axe vert $\rightarrow$ rouge, $a^* \in [-128, 127]$ ;
+  \item $b^*$ : axe bleu $\rightarrow$ jaune, $b^* \in [-128, 127]$.
+\end{itemize}
+
+La distance euclidienne dans LAB définit la \textbf{différence de couleur}
+$\Delta E$ :
+\begin{equation}
+  \Delta E = \sqrt{(\Delta L^*)^2 + (\Delta a^*)^2 + (\Delta b^*)^2}
+  \label{eq:dE}
+\end{equation}
+
+C'est cette propriété qui justifie le choix de LAB pour le clustering et le
+nommage des couleurs.
+
+% ------------------------------------------------------------
+\subsection{Conversion RGB $\rightarrow$ LAB}
+
+La conversion passe par l'espace intermédiaire \textbf{CIE XYZ}.
+
+\paragraph{Étape 1 --- linéarisation sRGB.}
+Pour chaque canal $c \in [0, 1]$ :
+\begin{equation}
+  c' = \begin{cases}
+    \dfrac{c}{12.92} & \text{si } c \le 0.04045 \\[8pt]
+    \left(\dfrac{c + 0.055}{1.055}\right)^{2.4} & \text{sinon}
+  \end{cases}
+  \label{eq:srgb}
+\end{equation}
+
+\paragraph{Étape 2 --- passage sRGB linéaire $\rightarrow$ XYZ.}
+Matrice du blanc D65 :
+\begin{equation}
+  \begin{bmatrix} X \\ Y \\ Z \end{bmatrix}
+  = \begin{bmatrix}
+    0.4124564 & 0.3575761 & 0.1804375 \\
+    0.2126729 & 0.7151522 & 0.0721750 \\
+    0.0193339 & 0.1191920 & 0.9503041
+  \end{bmatrix}
+  \begin{bmatrix} R' \\ G' \\ B' \end{bmatrix}
+  \label{eq:rgb2xyz}
+\end{equation}
+
+\paragraph{Étape 3 --- normalisation au blanc de référence.}
+Avec $X_n = 0.95047$, $Y_n = 1.0$, $Z_n = 1.08883$, on définit la fonction
+de transfert :
+\begin{equation}
+  f(t) = \begin{cases}
+    t^{1/3} & \text{si } t > \left(\dfrac{6}{29}\right)^3 \\[8pt]
+    \dfrac{1}{3}\left(\dfrac{29}{6}\right)^2 t + \dfrac{4}{29} & \text{sinon}
+  \end{cases}
+  \label{eq:ft}
+\end{equation}
+
+\paragraph{Étape 4 --- obtention de $L^*a^*b^*$.}
+\begin{align}
+  L^* &= 116\, f\!\left(\frac{Y}{Y_n}\right) - 16
+  \label{eq:L}\\[4pt]
+  a^* &= 500 \left[ f\!\left(\frac{X}{X_n}\right) - f\!\left(\frac{Y}{Y_n}\right) \right]
+  \label{eq:a}\\[4pt]
+  b^* &= 200 \left[ f\!\left(\frac{Y}{Y_n}\right) - f\!\left(\frac{Z}{Z_n}\right) \right]
+  \label{eq:b}
+\end{align}
+
+La conversion inverse \textbf{LAB $\rightarrow$ RGB} (utilisée pour les
+centres de clusters) applique les transformations inverses, le tout
+implémenté par scikit-image (\texttt{rgb2lab}, \texttt{lab2rgb}).
+
+% ------------------------------------------------------------
+\subsection{Luminance perceptuelle (Rec.~601)}
+
+La luminance de chaque pixel pondère les canaux selon la sensibilité de
+l'œil (le vert est dominant) :
+\begin{equation}
+  Y = 0.299\,R + 0.587\,G + 0.114\,B, \qquad Y \in [0, 255]
+  \label{eq:luma}
+\end{equation}
+
+Cette formule est utilisée par \texttt{HistogramProcessor} et par la
+retouche (ombres, hautes lumières, seuil).
+
+% ------------------------------------------------------------
+\subsection{Échantillonnage aléatoire des pixels}
+
+Pour accélérer l'entraînement de KMeans, un sous-ensemble de
+$S = 30\,000$ pixels est tiré \textbf{sans remise} selon une loi uniforme,
+à graine fixe :
+\begin{equation}
+  \mathcal{S} = \{ X_{i_j} \}_{j=1}^{S}, \qquad
+  i_j \sim \mathcal{U}\{1, N\} \text{ sans remise}
+  \label{eq:sample}
+\end{equation}
+avec $N = H \times W$ le nombre total de pixels. Le clustering est appris
+sur $\mathcal{S}$ puis appliqué à la totalité des pixels (prédiction).
+
+% ------------------------------------------------------------
+\subsection{Clustering KMeans}
+
+\paragraph{Objectif.}
+Partitionner les $N$ pixels $\{x_1, \dots, x_N\} \subset \mathbb{R}^3$
+(coordonnées LAB) en $K$ clusters $C_1, \dots, C_K$ de centres
+$\mu_1, \dots, \mu_K$, en minimisant l'inertie intra-cluster (somme des
+carrés intra-cluster, WCSS) :
+\begin{equation}
+  J = \sum_{i=1}^{K} \sum_{x \in C_i} \lVert x - \mu_i \rVert_2^2
+  \label{eq:wcss}
+\end{equation}
+
+\paragraph{Algorithme.}
+Alternance de deux étapes jusqu'à convergence, avec
+\texttt{n\_init} $= 10$ initialisations (la meilleure inertie est
+conservée) :
+\begin{enumerate}
+  \item \textbf{Initialisation} k-means++ (défaut scikit-learn), graine
+        fixe $= 42$ ;
+  \item \textbf{Affectation} : chaque pixel est assigné au centre le plus
+        proche :
+  \begin{equation}
+    C_i^{(t)} = \left\{ x : \lVert x - \mu_i^{(t)} \rVert_2 = \min_{j}
+    \lVert x - \mu_j^{(t)} \rVert_2 \right\}
+    \label{eq:assign}
+  \end{equation}
+  \item \textbf{Mise à jour} : chaque centre devient le barycentre de son
+        cluster :
+  \begin{equation}
+    \mu_i^{(t+1)} = \frac{1}{\lvert C_i^{(t)} \rvert}
+    \sum_{x \in C_i^{(t)}} x
+    \label{eq:update}
+  \end{equation}
+\end{enumerate}
+
+% ------------------------------------------------------------
+\subsection{Choix automatique de K --- score de silhouette}
+
+Le \textbf{score de silhouette} mesure la cohésion d'un pixel avec son
+propre cluster (distance intra $a_i$) relativement à la distance au cluster
+voisin le plus proche ($b_i$) :
+\begin{equation}
+  s(i) = \frac{b(i) - a(i)}{\max\bigl(a(i),\, b(i)\bigr)}, \qquad
+  s(i) \in [-1, 1]
+  \label{eq:silhouette}
+\end{equation}
+
+\begin{itemize}
+  \item $s(i) \approx 1$ : pixel très bien classé ;
+  \item $s(i) \approx 0$ : pixel à la frontière de deux clusters ;
+  \item $s(i) < 0$ : pixel probablement mal affecté.
+\end{itemize}
+
+Le score global est la moyenne sur tous les pixels :
+\begin{equation}
+  \bar{s} = \frac{1}{N}\sum_{i=1}^{N} s(i)
+  \label{eq:silhouette-mean}
+\end{equation}
+
+\paragraph{Stratégie.}
+Pour chaque $K \in [2, 8]$, entraîner KMeans, calculer $\bar{s}$ sur un
+échantillon de 5\,000 pixels, et retenir :
+\begin{equation}
+  K^* = \arg\max_{K} \bar{s}(K)
+  \label{eq:bestk}
+\end{equation}
+
+% ------------------------------------------------------------
+\subsection{Calcul des proportions}
+
+Après prédiction, le nombre de pixels de chaque cluster $n_j$ est compté
+(\texttt{np.bincount}), et la proportion est :
+\begin{equation}
+  p_j = \frac{n_j}{\sum_{k=1}^{K} n_k}, \qquad \sum_{j} p_j = 1
+  \label{eq:proportions}
+\end{equation}
+
+Les couleurs sont ensuite classées par proportion décroissante (rang 1 =
+couleur la plus présente).
+
+% ------------------------------------------------------------
+\subsection{Nommage des couleurs --- distance $\Delta E$}
+
+Chaque centre de cluster $L_c = (L^*, a^*, b^*)$ est comparé aux 67
+couleurs de référence $R_k$ (converties au préalable en LAB) par distance
+euclidienne :
+\begin{equation}
+  k^* = \arg\min_{k} \lVert L_c - R_k \rVert_2
+  \label{eq:naming}
+\end{equation}
+
+Le nom retenu est celui de la couleur de référence la plus proche, et la
+valeur $\lVert L_c - R_{k^*} \rVert_2$ est stockée dans
+\texttt{distance\_lab} comme indicateur de confiance.
+
+% ------------------------------------------------------------
+\subsection{Histogramme de luminance et statistiques tonales}
+
+\paragraph{Histogramme.}
+L'intervalle $[0, 255]$ est découpé en $B = 64$ tranches de largeur
+$\Delta = 255/64$. Pour la tranche $j$ de bornes $[e_j, e_{j+1}]$ :
+\begin{equation}
+  h_j = \sum_{x} \mathbb{1}\bigl\{ e_j \le Y(x) < e_{j+1} \bigr\}
+  \label{eq:histogram}
+\end{equation}
+
+\paragraph{Zones tonales.}
+Seuils : ombres $\leq 85$, hautes lumières $\geq 170$.
+\begin{itemize}
+  \item Ombres : $[0, 85)$ ;
+  \item Tons moyens : $[85, 170)$ ;
+  \item Hautes lumières : $[170, 255]$.
+\end{itemize}
+Le pourcentage de pixels par zone est :
+\begin{equation}
+  \%_\text{zone} = 100 \times \mathbb{E}\bigl[\mathbb{1}\{Y \in \text{zone}\}\bigr]
+  \label{eq:zones}
+\end{equation}
+
+\paragraph{Statistiques.}
+Moyenne $\mu = \frac{1}{N}\sum_i Y_i$, médiane, écart-type $\sigma$
+(indicateur de contraste), min, max --- calculés sur la luminance et sur
+chaque canal RGB.
+
+% ------------------------------------------------------------
+\subsection{Modèles de retouche d'image}
+
+Les opérations élémentaires de \texttt{ImageEditor} sont les suivantes.
+
+\paragraph{Exposition (EV).}
+Chaque +1 EV double la luminosité :
+\begin{equation}
+  I' = I \cdot 2^{\,EV}
+  \label{eq:exposure}
+\end{equation}
+
+\paragraph{Gamma.}
+Correction de courbe :
+\begin{equation}
+  I' = 255 \left( \frac{I}{255} \right)^{1/\gamma}
+  \label{eq:gamma}
+\end{equation}
+
+\paragraph{Sépia.}
+Combinaison linéaire des canaux :
+\begin{equation}
+  \begin{bmatrix} R' \\ G' \\ B' \end{bmatrix}
+  = \begin{bmatrix}
+    0.393 & 0.769 & 0.189 \\
+    0.349 & 0.686 & 0.168 \\
+    0.272 & 0.534 & 0.131
+  \end{bmatrix}
+  \begin{bmatrix} R \\ G \\ B \end{bmatrix}
+  \label{eq:sepia}
+\end{equation}
+
+\paragraph{Température.}
+Décalage additif (chaud : $+R$, $-B$ ; froid : inverse) :
+\begin{equation}
+  R' = R + \frac{t}{100}\cdot 45, \quad
+  G' = G + \frac{t}{100}\cdot 12, \quad
+  B' = B - \frac{t}{100}\cdot 45
+  \label{eq:temperature}
+\end{equation}
+
+\paragraph{Canaux (gains).}
+\begin{equation}
+  I'_c = I_c + g_c \cdot 1.275
+  \label{eq:channels}
+\end{equation}
+
+\paragraph{Vibrance (espace HSV).}
+Renforce surtout les couleurs ternes, avec $v = \text{vibrance}/100$ :
+\begin{equation}
+  S' = \begin{cases}
+    S + v\,(255 - S)\cdot 0.7 & \text{si } v \ge 0 \\[4pt]
+    S\,(1 + v) & \text{si } v < 0
+  \end{cases}
+  \label{eq:vibrance}
+\end{equation}
+
+\paragraph{Rotation de teinte.}
+\begin{equation}
+  H' = (H + \text{offset}) \bmod 256
+  \label{eq:hue}
+\end{equation}
+
+\paragraph{Ombres.}
+Pondération forte sur les zones sombres, $w = (1 - Y/255)^2$ :
+\begin{equation}
+  I' = I + \frac{s}{100}\cdot w \cdot 120
+  \label{eq:shadows}
+\end{equation}
+
+\paragraph{Hautes lumières.}
+Pondération forte sur les zones claires, $w = (Y/255)^2$ :
+\begin{equation}
+  I' = I + \frac{h}{100}\cdot w \cdot 120
+  \label{eq:highlights}
+\end{equation}
+
+\paragraph{Vignette.}
+Facteur radial décroissant depuis le centre ($d$ distance normalisée,
+$d \in [0, 1]$) :
+\begin{align}
+  d &= \sqrt{\left(\frac{x - W/2}{W}\right)^2 + \left(\frac{y - H/2}{H}\right)^2}
+      \bigg/ 0.7071
+      \label{eq:vignette-d}\\[4pt]
+  f &= 1 - \frac{v}{100}\, d^2, \qquad I' = I \cdot f
+      \label{eq:vignette-f}
+\end{align}
+
+\paragraph{Postérisation.}
+Quantification à $L$ niveaux par canal :
+\begin{equation}
+  I' = \frac{\text{round}\!\left(I \cdot \frac{L-1}{255}\right)}
+             {(L-1)/255}
+  \label{eq:posterize}
+\end{equation}
+
+\paragraph{Solarisation.}
+Effet Sabattier, inversion au-delà d'un seuil $t$ :
+\begin{equation}
+  I' = \begin{cases}
+    I & \text{si } I < t \\
+    255 - I & \text{si } I \ge t
+  \end{cases}
+  \label{eq:solarize}
+\end{equation}
+
+\paragraph{Seuil (noir \& blanc).}
+\begin{equation}
+  I' = \begin{cases}
+    255 & \text{si } Y \ge t \\
+    0 & \text{sinon}
+  \end{cases}
+  \label{eq:threshold}
+\end{equation}
+
+\paragraph{Grain de film.}
+Bruit gaussien additif, $\sigma = \frac{\text{grain}}{100}\cdot 50$ :
+\begin{equation}
+  I' = I + \mathcal{N}(0, \sigma)
+  \label{eq:grain}
+\end{equation}
+
+\paragraph{Teinte colorée.}
+Interpolation entre l'image et une couleur cible $C$,
+$t = \frac{\text{intensité}}{100}$ :
+\begin{equation}
+  I' = I\,(1 - t) + C\,t
+  \label{eq:tint}
+\end{equation}
+
+\paragraph{Négatif.}
+\begin{equation}
+  I' = 255 - I
+  \label{eq:invert}
+\end{equation}
+
+\paragraph{Luminosité, contraste, saturation, netteté.}
+Mises à l'échelle linéaire par \texttt{ImageEnhance}, facteur
+$= \text{valeur}/100$.
+
+\paragraph{Pixelisation.}
+Réduction puis agrandissement avec filtre au plus proche voisin.
+
+Toutes les opérations sont suivies d'un clip
+$\text{clip}(I, 0, 255)$ et d'un cast \texttt{uint8}.
+
+% ============================================================
+% 5. PIPELINE D'ANALYSE
+% ============================================================
+\section{Pipeline d'analyse}
+
+Le pipeline complet exécuté par \texttt{ColorAnalyzer.analyze()} :
+
+\begin{lstlisting}[language=bash]
+Image RGB (H, W, 3)
+  |  1. Conversion RGB -> LAB
+  V
+Image LAB (H, W, 3)
+  |  2. Aplatissement -> pixels (H*W, 3)
+  |  3. Echantillonnage (<= 30 000 px, graine 42)
+  V
+Pixels LAB echantillonnes
+  |  4. K automatique (silhouette, K in [2,8]) OU K manuel
+  |  5. KMeans (n_init=10) + prediction sur tous les pixels
+  V
+Labels (H*W,)
+  |  6. Comptage (bincount) -> proportions
+  |  7. Centres LAB -> RGB
+  |  8. Reconstruction image segmentee (H, W, 3)
+  |  9. Tri par proportion decroissante
+  |  10. Nommage (Delta E) + HEX + ColorResult
+  V
+Resultats : couleurs, image segmentee, metadonnees
+\end{lstlisting}
+
+% ============================================================
+% 6. INTERFACE UTILISATEUR
+% ============================================================
+\section{Interface utilisateur}
+
+\begin{itemize}
+  \item \textbf{Thème océan} personnalisé (\texttt{.streamlit/config.toml})
+        : sarcelle \texttt{\#137C8B}, ardoise \texttt{\#344D59}, fond
+        bleuté \texttt{\#E8F1F3} ;
+  \item \textbf{Hero} avec dégradé et badges récapitulatifs ;
+  \item \textbf{CSS centralisé} (\texttt{styles.py}) : cartes de métriques,
+        cadres d'images, palette avec rang, survol, copie des codes HEX au
+        clic ;
+  \item \textbf{Barre latérale} organisée en sections repliables :
+        luminosité, tons, détail, effets avancés, filtres artistiques,
+        paramètres d'analyse ;
+  \item \textbf{Onglet Retouche} : comparaison avant/après + histogrammes
+        luminance (zones ombres / tons moyens / hautes lumières) et canaux
+        RGB superposés, statistiques comparatives mises à jour en direct ;
+  \item \textbf{Onglet Analyse} : image segmentée, palette de couleurs,
+        graphique des proportions coloré (Altair), tableau détaillé,
+        exports JSON/CSV.
+\end{itemize}
+
+% ============================================================
+% 7. EXPORTS DE DONNÉES
+% ============================================================
+\section{Exports de données}
+
+\begin{itemize}
+  \item \textbf{JSON} : liste des \texttt{ColorResult} (rang, nom, rgb,
+        hex, pixels, proportion, proportion\_pct, distance\_lab) +
+        \texttt{AnalysisMetadata} ;
+  \item \textbf{CSV} : tableau des couleurs avec colonnes renommées et
+        formatées.
+\end{itemize}
+
+% ============================================================
+% 8. COMPLEXITÉ ET PERFORMANCES
+% ============================================================
+\section{Complexité et performances}
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{@{}p{5cm}p{6.5cm}p{5cm}@{}}
+\toprule
+\textbf{Opération} & \textbf{Complexité} & \textbf{Notes} \\
+\midrule
+Échantillonnage &
+$O(N)$ &
+$N \le W \times H$, borné à 30\,000 px pour l'entraînement \\
+KMeans &
+$O(K \cdot n \cdot d \cdot \text{iter} \cdot n\_init)$ &
+$n = 30\,000$, $d = 3$, $n\_init = 10$, au plus 7 valeurs de K ($K \in [2,8]$) \\
+Score silhouette &
+$O(n^2)$ en théorie &
+borné par échantillonnage à 5\,000 px \\
+Prédiction &
+$O(N \cdot K \cdot d)$ &
+$N$ = tous les pixels de l'image redimensionnée \\
+Reconstruction &
+$O(N)$ &
+tableaux indexés NumPy \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Le redimensionnement (taille max 600 px par défaut, réglable jusqu'à
+1\,000 px) garantit un temps de réponse interactif dans Streamlit.
+
+% ============================================================
+% 9. LIMITES CONNUES
+% ============================================================
+\section{Limites connues}
+
+\begin{itemize}
+  \item \textbf{Nommage approximatif} : le nom dépend du dictionnaire de 67
+        références ; deux nuances proches peuvent recevoir le même nom, et
+        le seuil de $\Delta E$ n'est pas discriminé (une couleur
+        hors-gamme est toujours nommée).
+  \item \textbf{KMeans sensible à l'initialisation} : atténué par
+        \texttt{n\_init} $= 10$ et la graine fixe ; les clusters sont
+        convexes (forme sphérique), ce qui peut mal séparer des couleurs
+        non linéairement séparables.
+  \item \textbf{Choix de K par silhouette} : limité à $[2, 8]$ ; le score
+        peut favoriser un K faible pour des images très hétérogènes.
+  \item \textbf{Précision des conversions} : LAB $\rightarrow$ RGB peut
+        produire des valeurs hors gamme, gérées par \texttt{clip}
+        (légère perte de fidélité).
+  \item \textbf{Redimensionnement} : l'analyse porte sur une image réduite,
+        les pixels fins peuvent être perdus.
+\end{itemize}
+
+% ============================================================
+% 10. CONCLUSION
+% ============================================================
+\section{Conclusion}
+
+ImageSense combine des concepts mathématiques éprouvés --- espace
+perceptuel CIELAB, clustering KMeans, score de silhouette, distance
+$\Delta E$ --- dans une application web interactive et professionnelle.
+L'architecture modulaire (injection de dépendances) facilite l'extension :
+nouveaux espaces colorimétriques (HSV, HSL), clustering hiérarchique ou
+DBSCAN, seuillage de $\Delta E$ pour le nommage, ou analyse par régions
+constituent les pistes d'évolution naturelles.
+
+\end{document}
