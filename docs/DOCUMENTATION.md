@@ -31,8 +31,9 @@ Application web **Python + Streamlit** · Espace colorimétrique **LAB** · Clus
 8. [Interface utilisateur](#8-interface-utilisateur)
 9. [Exports de données](#9-exports-de-données)
 10. [Complexité et performances](#10-complexité-et-performances)
-11. [Limites connues](#11-limites-connues)
-12. [Conclusion](#12-conclusion)
+11. [Tests unitaires](#11-tests-unitaires)
+12. [Limites connues](#12-limites-connues)
+13. [Conclusion](#13-conclusion)
 
 ---
 
@@ -90,7 +91,8 @@ Le projet part d'un constat : extraire les couleurs dominantes d'une image de fa
 
 - Limiter le temps de calcul par redimensionnement (taille max 1000 px) et échantillonnage (≤ 30 000 pixels) ;
 - Assurer la reproductibilité via une graine aléatoire fixe (`RANDOM_STATE = 42`) ;
-- Réaliser tous les traitements avec NumPy / scikit-learn / scikit-image.
+- Réaliser tous les traitements avec NumPy / scikit-learn / scikit-image ;
+- Garantir la non-régression grâce à une suite de tests unitaires (pytest, 94 tests).
 
 ---
 
@@ -116,6 +118,18 @@ MamiLoko Vision/
 ├── styles.py               # CSS global + CSS iframe
 ├── .streamlit/config.toml  # Thème océan Streamlit
 ├── requirements.txt        # Dépendances Python
+├── requirements-dev.txt    # Dépendances de développement (pytest, pytest-cov)
+├── pytest.ini              # Configuration pytest (testpaths, filtres de warnings)
+├── tests/                  # Suite de tests unitaires (94 tests, pytest)
+│   ├── conftest.py         # Fixtures partagées : images synthétiques reproductibles
+│   ├── test_constants.py   # Cohérence des constantes du projet
+│   ├── test_models.py      # Dataclasses ColorResult / AnalysisMetadata
+│   ├── test_color_processor.py    # Conversions RGB↔LAB↔HEX, nommage ΔE
+│   ├── test_image_processor.py    # Échantillonnage, reconstruction, chargement
+│   ├── test_clustering_service.py # KMeans, silhouette, reproductibilité
+│   ├── test_color_analyzer.py     # Pipeline d'analyse complet
+│   ├── test_histogram_processor.py# Luminance, histogrammes, statistiques
+│   └── test_image_editor.py       # Réglages de retouche
 ├── logo/                   # Logo du projet (PNG, SVG, icône) et assets
 ├── docs/                   # Documentation : .tex, .md, .pdf, script de compilation
 └── README.md               # Présentation du projet
@@ -479,7 +493,70 @@ Le redimensionnement (taille max 600 px par défaut, réglable jusqu'à 1 000 px
 
 ---
 
-## 11. Limites connues
+## 11. Tests unitaires
+
+### 11.1 Philosophie
+
+La qualité du code est assurée par une suite de **94 tests unitaires** écrits avec **pytest**. L'architecture à **injection de dépendances** (`ColorAnalyzer` accepte ses services en paramètre de constructeur) rend chaque module testable de façon isolée, sans interface graphique ni fichier externe : les images utilisées sont des **tableaux NumPy synthétiques** générés par les fixtures.
+
+Les tests vérifient :
+
+- les **cas nominaux** (ex. : `(255, 0, 0)` → `#ff0000`) ;
+- les **cas limites** (clipping 0-255, image uniforme, moins de pixels que de clusters) ;
+- les **invariants** (somme des proportions = 1, tri décroissant, dimensions conservées) ;
+- la **reproductibilité** (même graine → mêmes centres KMeans, même échantillon).
+
+### 11.2 Organisation de la suite
+
+| Fichier | Module testé | Contenu | Nb |
+|---|---|---|---|
+| `test_constants.py` | `constants.py` | Triplets RGB valides, bornes K croissantes, options « Aucune »/« Aucun » | 8 |
+| `test_models.py` | `models.py` | Création des dataclasses, `to_dict()` complet et fidèle, score optionnel | 6 |
+| `test_color_processor.py` | `ColorProcessor` | RGB→HEX (padding), RGB↔LAB (noir L\*=0, blanc L\*=100), nommage ΔE, couleurs personnalisées | 14 |
+| `test_image_processor.py` | `ImageProcessor` | Échantillonnage (taille, reproductibilité), reconstruction labels→couleurs, chargement PIL (ratio, RGBA→RGB) | 10 |
+| `test_clustering_service.py` | `ClusteringService` | `fit`/`predict`, reproductibilité, `choose_best_k` sur 3 groupes séparés, bornes respectées | 9 |
+| `test_color_analyzer.py` | `ColorAnalyzer` | Pipeline complet : 2 couleurs détectées sur image bicolore, proportions sommées à 1, tri décroissant, métadonnées, HEX valides, mode automatique | 10 |
+| `test_histogram_processor.py` | `HistogramProcessor` | Luminance Rec. 601, histogrammes (64 bins, totaux exacts), canaux RGB, comparaison avant/après, statistiques tonales | 19 |
+| `test_image_editor.py` | `ImageEditor` | Défauts = image identique, négatif, N&B, seuil binaire, exposition ×2, gamma neutre, teinte, postérisation, vignette, solarisation | 18 |
+
+**Total : 94 tests** — exécution complète en environ 1,5 s.
+
+Les modules d'interface (`app.py`, `result_renderer.py`, `styles.py`) ne sont pas couverts par ces tests unitaires : ils dépendent du runtime Streamlit et relèvent de tests d'intégration dédiés.
+
+### 11.3 Fixtures partagées
+
+Définies dans `tests/conftest.py`, elles garantissent des données d'entrée déterministes :
+
+| Fixture | Description |
+|---|---|
+| `image_rouge` | Image 4×4 rouge pur — cas monochrome |
+| `image_bicolore` | Image 2×2 moitié rouge / moitié bleu — cas clustering idéal |
+| `image_degradee` | Image 10×10 aléatoire, graine fixe (`default_rng(42)`) |
+| `image_noire` / `image_blanche` | Cas extrêmes de luminance (0 / 255) |
+
+`conftest.py` insère également la racine du projet dans `sys.path` afin que les imports plats (`from constants import ...`) fonctionnent depuis le dossier `tests/`.
+
+### 11.4 Exécution
+
+```bash
+# Installation des dépendances de test
+pip install -r requirements-dev.txt
+
+# Suite complète
+pytest
+
+# Rapport de couverture ligne à ligne
+pytest --cov=. --cov-report=term-missing
+
+# Un module précis
+pytest tests/test_color_analyzer.py
+```
+
+La configuration (`pytest.ini`) fixe le dossier de tests (`testpaths = tests`), les conventions de nommage et filtre les `ConvergenceWarning` de scikit-learn attendus sur des données volontairement dégénérées (image uniforme).
+
+---
+
+## 12. Limites connues
 
 - **Nommage approximatif** : le nom dépend du dictionnaire de 67 références ; deux nuances proches peuvent recevoir le même nom, et le seuil de ΔE n'est pas discriminé (une couleur hors-gamme est toujours nommée).
 - **KMeans sensible à l'initialisation** : atténué par `n_init=10` et la graine fixe ; les clusters sont convexes (forme sphérique), ce qui peut mal séparer des couleurs non linéairement séparables.
@@ -489,6 +566,6 @@ Le redimensionnement (taille max 600 px par défaut, réglable jusqu'à 1 000 px
 
 ---
 
-## 12. Conclusion
+## 13. Conclusion
 
-MamiLoko Vision combine des concepts mathématiques éprouvés — espace perceptuel CIELAB, clustering KMeans, score de silhouette, distance ΔE — dans une application web interactive et professionnelle. L'architecture modulaire (injection de dépendances) facilite l'extension : nouveaux espaces colorimétriques (HSV, HSL), clustering hiérarchique ou DBSCAN, seuillage de ΔE pour le nommage, ou analyse par régions constituent les pistes d'évolution naturelles.
+MamiLoko Vision combine des concepts mathématiques éprouvés — espace perceptuel CIELAB, clustering KMeans, score de silhouette, distance ΔE — dans une application web interactive et professionnelle. La suite de 94 tests unitaires garantit la fiabilité du pipeline d'analyse et de la retouche, et l'architecture modulaire (injection de dépendances) facilite l'extension : nouveaux espaces colorimétriques (HSV, HSL), clustering hiérarchique ou DBSCAN, seuillage de ΔE pour le nommage, ou analyse par régions constituent les pistes d'évolution naturelles.

@@ -73,6 +73,50 @@ Le pipeline d'analyse suit les étapes suivantes :
 | scikit-learn     | Clustering KMeans et score silhouette   |
 | scikit-image     | Conversions colorimétriques RGB ↔ LAB   |
 | Pillow           | Lecture et redimensionnement des images |
+| pytest           | Tests unitaires                         |
+
+---
+
+## Tests unitaires
+
+Le projet dispose d'une suite de **94 tests unitaires** (pytest) couvrant toute la logique métier : conversions colorimétriques, clustering, pipeline d'analyse, retouche, histogrammes, modèles de données et constantes.
+
+### Installation
+
+```bash
+pip install -r requirements.txt
+pip install -r requirements-dev.txt
+```
+
+### Exécution
+
+```bash
+# Lancer toute la suite
+pytest
+
+# Avec rapport de couverture
+pytest --cov=. --cov-report=term-missing
+
+# Lancer un seul module de tests
+pytest tests/test_color_analyzer.py
+```
+
+### Organisation
+
+| Fichier de test              | Contenu testé                                              | Nb |
+|------------------------------|------------------------------------------------------------|----|
+| `test_constants.py`          | Cohérence des constantes (RGB valides, bornes K)            | 8  |
+| `test_models.py`             | Dataclasses `ColorResult` / `AnalysisMetadata`, `to_dict()` | 6  |
+| `test_color_processor.py`    | Conversions RGB ↔ LAB ↔ HEX, nommage ΔE                     | 14 |
+| `test_image_processor.py`    | Échantillonnage, reconstruction segmentée, chargement       | 10 |
+| `test_clustering_service.py` | KMeans, reproductibilité, choix automatique de K            | 9  |
+| `test_color_analyzer.py`     | Pipeline complet (proportions, tri, métadonnées)            | 10 |
+| `test_histogram_processor.py`| Luminance, histogrammes, statistiques tonales               | 19 |
+| `test_image_editor.py`       | Réglages de retouche (négatif, seuil, teinte, vignette…)    | 18 |
+
+Les modules d'interface (`app.py`, `result_renderer.py`, `styles.py`) ne sont pas couverts par les tests unitaires : ils dépendent du runtime Streamlit et relèvent de tests d'intégration.
+
+Les fixtures partagées (images synthétiques rouge, bicolore, dégradée, noire, blanche) sont définies dans `tests/conftest.py`. La configuration pytest se trouve dans `pytest.ini`.
 
 ---
 
@@ -94,6 +138,18 @@ MamiLoko Vision/
 ├── styles.py               # CSS global de l'interface
 ├── .streamlit/config.toml  # Thème et configuration Streamlit
 ├── requirements.txt        # Dépendances Python
+├── requirements-dev.txt    # Dépendances de développement (pytest, pytest-cov)
+├── pytest.ini              # Configuration des tests unitaires
+├── tests/                  # Suite de tests unitaires (94 tests)
+│   ├── conftest.py         # Fixtures partagées (images synthétiques)
+│   ├── test_constants.py
+│   ├── test_models.py
+│   ├── test_color_processor.py
+│   ├── test_image_processor.py
+│   ├── test_clustering_service.py
+│   ├── test_color_analyzer.py
+│   ├── test_histogram_processor.py
+│   └── test_image_editor.py
 ├── .gitignore              # Fichiers à ignorer par Git
 ├── logo/                   # Logo du projet (PNG, SVG, icône) et assets
 ├── docs/                   # Documentation (LaTeX, Markdown, PDF, compile_pdf.py)

@@ -245,7 +245,9 @@ d'automatiser le choix du nombre de couleurs.
   \item Assurer la reproductibilité via une graine aléatoire fixe
         ($\texttt{RANDOM\_STATE} = 42$);
   \item Réaliser tous les traitements avec NumPy / scikit-learn /
-        scikit-image.
+        scikit-image;
+  \item Garantir la non-régression grâce à une suite de tests unitaires
+        (pytest, 94 tests).
 \end{itemize}
 
 % ============================================================
@@ -275,6 +277,11 @@ color_analysis/
 |-- styles.py               # CSS global + CSS iframe
 |-- .streamlit/config.toml  # Theme ocean Streamlit
 |-- requirements.txt        # Dependances Python
+|-- requirements-dev.txt    # Dependances de developpement (pytest, pytest-cov)
+|-- pytest.ini              # Configuration pytest (testpaths, filtres warnings)
+|-- tests/                  # Suite de tests unitaires (94 tests, pytest)
+|   |-- conftest.py         # Fixtures partagees : images synthetiques
+|   +-- test_*.py           # Un fichier par module de logique metier
 |-- logo/                   # Images de presentation (assets)
 |-- docs/                   # Documentation : .tex, .md, .pdf, script de compilation
 +-- README.md               # Presentation du projet
@@ -826,7 +833,77 @@ Le redimensionnement (taille max 600 px par défaut, réglable jusqu'à
 1\,000 px) garantit un temps de réponse interactif dans Streamlit.
 
 % ============================================================
-% 9. LIMITES CONNUES
+% 9. TESTS UNITAIRES
+% ============================================================
+\section{Tests unitaires}
+
+La qualité du code est assurée par une suite de \textbf{94 tests
+unitaires} écrits avec \texttt{pytest}. L'architecture à injection de
+dépendances rend chaque module testable de façon isolée, sans interface
+graphique ni fichier externe : les images utilisées sont des tableaux
+NumPy synthétiques générés par des \emph{fixtures} reproductibles.
+
+Les tests vérifient les cas nominaux (ex. : $(255,0,0) \rightarrow$
+\texttt{\#ff0000}), les cas limites (clipping $[0,255]$, image uniforme,
+moins de pixels que de clusters), les invariants (somme des proportions
+égale à 1, tri décroissant, dimensions conservées) et la
+reproductibilité (même graine $\Rightarrow$ mêmes centres KMeans).
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{@{}p{5.2cm}p{8.2cm}r@{}}
+\toprule
+\textbf{Fichier} & \textbf{Contenu testé} & \textbf{Nb} \\
+\midrule
+\texttt{test\_constants.py} &
+Cohérence des constantes (RGB valides, bornes K croissantes) & 8 \\
+\texttt{test\_models.py} &
+Dataclasses \texttt{ColorResult} / \texttt{AnalysisMetadata},
+\texttt{to\_dict()} & 6 \\
+\texttt{test\_color\_processor.py} &
+RGB $\rightarrow$ HEX (padding), RGB $\leftrightarrow$ LAB (noir
+$L^*=0$, blanc $L^*=100$), nommage $\Delta E$ & 14 \\
+\texttt{test\_image\_processor.py} &
+Échantillonnage (taille, reproductibilité), reconstruction labels
+$\rightarrow$ couleurs, chargement PIL & 10 \\
+\texttt{test\_clustering\_service.py} &
+\texttt{fit}/\texttt{predict}, reproductibilité,
+\texttt{choose\_best\_k} sur groupes séparés & 9 \\
+\texttt{test\_color\_analyzer.py} &
+Pipeline complet : proportions sommées à 1, tri décroissant,
+métadonnées, HEX valides & 10 \\
+\texttt{test\_histogram\_processor.py} &
+Luminance Rec.~601, histogrammes (64 bins), canaux RGB, statistiques
+tonales & 19 \\
+\texttt{test\_image\_editor.py} &
+Défauts = image identique, négatif, N\&B, seuil binaire, exposition
+$\times 2$, teinte, vignette & 18 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\noindent Total : 94 tests, exécutés en environ 1,5~s. Les modules
+d'interface (\texttt{app.py}, \texttt{result\_renderer.py},
+\texttt{styles.py}) dépendent du runtime Streamlit et relèvent de tests
+d'intégration dédiés.
+
+Exécution :
+
+\begin{lstlisting}[language=bash]
+pip install -r requirements-dev.txt   # dependances de test
+pytest                                # suite complete
+pytest --cov=. --cov-report=term-missing   # couverture
+pytest tests/test_color_analyzer.py   # un module precis
+\end{lstlisting}
+
+La configuration (\texttt{pytest.ini}) fixe le dossier de tests
+(\texttt{testpaths = tests}), les conventions de nommage et filtre les
+\texttt{ConvergenceWarning} de scikit-learn attendus sur des données
+volontairement dégénérées.
+
+% ============================================================
+% 10. LIMITES CONNUES
 % ============================================================
 \section{Limites connues}
 
@@ -849,16 +926,18 @@ Le redimensionnement (taille max 600 px par défaut, réglable jusqu'à
 \end{itemize}
 
 % ============================================================
-% 10. CONCLUSION
+% 11. CONCLUSION
 % ============================================================
 \section{Conclusion}
 
 MamiLoko Vision combine des concepts mathématiques éprouvés --- espace
 perceptuel CIELAB, clustering KMeans, score de silhouette, distance
 $\Delta E$ --- dans une application web interactive et professionnelle.
-L'architecture modulaire (injection de dépendances) facilite l'extension :
-nouveaux espaces colorimétriques (HSV, HSL), clustering hiérarchique ou
-DBSCAN, seuillage de $\Delta E$ pour le nommage, ou analyse par régions
-constituent les pistes d'évolution naturelles.
+La suite de 94 tests unitaires garantit la fiabilité du pipeline
+d'analyse et de la retouche. L'architecture modulaire (injection de
+dépendances) facilite l'extension : nouveaux espaces colorimétriques
+(HSV, HSL), clustering hiérarchique ou DBSCAN, seuillage de $\Delta E$
+pour le nommage, ou analyse par régions constituent les pistes
+d'évolution naturelles.
 
 \end{document}
