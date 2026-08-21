@@ -1,6 +1,10 @@
-# ImageSense
+# MamiLoko Vision
 
-**ImageSense : analyse colorimétrique d'images — extraction automatique des couleurs dominantes, estimation de leurs proportions et classification par clustering.**
+<p align="center">
+  <img src="logo/logo_hd.png" alt="Logo MamiLoko Vision" width="180" />
+</p>
+
+**MamiLoko Vision : analyse colorimétrique d'images — extraction automatique des couleurs dominantes, estimation de leurs proportions et classification par clustering.**
 
 Application web développée avec **Python** et **Streamlit**.
 
@@ -11,7 +15,8 @@ Application web développée avec **Python** et **Streamlit**.
 L'interface a été conçue pour un rendu professionnel :
 
 - **Thème personnalisé** défini dans `.streamlit/config.toml` (palette océan : sarcelle, bleu-gris, ardoise) ;
-- **Bandeau d'en-tête** (hero) avec dégradé et badges récapitulatifs des fonctionnalités ;
+- **Logo dédié** (`logo/logo.png`, décliné en `logo_hd.png`, `logo.svg` et icône `logo_icon.png`) : affiché dans le bandeau d'en-tête et comme icône d'onglet ;
+- **Bandeau d'en-tête** (hero) avec dégradé, logo et badges récapitulatifs des fonctionnalités ;
 - **CSS global centralisé** dans `styles.py` : cartes de métriques, cadres d'images, palette de couleurs avec rang, effet de survol, copie des codes HEX ;
 - **Barre latérale organisée** en sections repliables (luminosité, tons, détail, effets avancés, filtres artistiques) ;
 - **Histogrammes avant / après** dans l'onglet retouche (style Photoshop / Lightroom) : luminance avec zones tonales (ombres, tons moyens, hautes lumières), canaux Rouge / Vert / Bleu superposés, et statistiques comparatives (moyenne, médiane, écart-type) — mise à jour en direct à chaque réglage ;
@@ -74,7 +79,7 @@ Le pipeline d'analyse suit les étapes suivantes :
 ## Structure du projet
 
 ```text
-ImageSense/
+MamiLoko Vision/
 │
 ├── app.py                  # Point d'entrée de l'application Streamlit
 ├── constants.py            # Constantes et paramètres du projet
@@ -90,6 +95,6 @@ ImageSense/
 ├── .streamlit/config.toml  # Thème et configuration Streamlit
 ├── requirements.txt        # Dépendances Python
 ├── .gitignore              # Fichiers à ignorer par Git
-├── logo/                   # Images de présentation (assets)
+├── logo/                   # Logo du projet (PNG, SVG, icône) et assets
 ├── docs/                   # Documentation (LaTeX, Markdown, PDF, compile_pdf.py)
 └── README.md               # Documentation du projet

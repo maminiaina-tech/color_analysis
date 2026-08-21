@@ -1,5 +1,5 @@
 % ============================================================
-% ImageSense — Documentation technique
+% MamiLoko Vision — Documentation technique
 % Compilation : pdflatex DOCUMENTATION.tex (ou latexmk)
 % ============================================================
 
@@ -88,9 +88,11 @@
 
         {\Large Documentation technique et modèles mathématiques}\\
         \vspace{1.5cm}
+        \includegraphics[height=4.5cm]{../logo/logo_hd.png}\\
+        \vspace{0.5cm}
         
         {\large ---------------------------------------------------------------}\\       
-        {\Huge \color{teal}\textbf{ImageSense}}\\
+        {\Huge \color{teal}\textbf{MamiLoko Vision}}\\
         {\large --------------------------------------------------------------------------------------}\\       
         \vspace{0.5cm}
         {\large Projet d'analyse colorimétrique d'images}\\       
@@ -122,7 +124,7 @@
 \section*{Résumé}
 \addcontentsline{toc}{section}{Résumé}
 
-\textbf{ImageSense} est une application web d'analyse colorimétrique et de
+\textbf{MamiLoko Vision} est une application web d'analyse colorimétrique et de
 retouche d'image en temps réel. L'utilisateur téléverse une image
 (JPG, PNG, WEBP), la retouche via une barre latérale inspirée de Photoshop
 (luminosité, contraste, saturation, gamma, exposition, température,
@@ -158,7 +160,7 @@ Streamlit.
 \section*{Abstract}
 \addcontentsline{toc}{section}{Abstract}
 
-ImageSense is a web application for colorimetric image analysis and
+MamiLoko Vision is a web application for colorimetric image analysis and
 real-time photo editing. The user uploads an image (JPG, PNG, WEBP), edits
 it through a Photoshop-inspired sidebar (brightness, contrast, saturation,
 gamma, exposure, temperature, vibrance, vignetting, artistic filters\ldots),
@@ -198,7 +200,7 @@ représentatives accompagnées de leurs proportions.
 
 La difficulté principale est que l'espace \textbf{RGB} n'est pas
 \textbf{perceptuellement uniforme} : une distance euclidienne dans RGB ne
-reflète pas la distance perçue par l'œil humain. ImageSense répond à ce
+reflète pas la distance perçue par l'œil humain. MamiLoko Vision répond à ce
 problème en travaillant dans l'espace \textbf{CIELAB}, conçu pour que la
 distance euclidienne y approxime la différence perceptuelle, et en
 utilisant \textbf{KMeans} pour regrouper les pixels en clusters de couleurs
@@ -851,7 +853,7 @@ Le redimensionnement (taille max 600 px par défaut, réglable jusqu'à
 % ============================================================
 \section{Conclusion}
 
-ImageSense combine des concepts mathématiques éprouvés --- espace
+MamiLoko Vision combine des concepts mathématiques éprouvés --- espace
 perceptuel CIELAB, clustering KMeans, score de silhouette, distance
 $\Delta E$ --- dans une application web interactive et professionnelle.
 L'architecture modulaire (injection de dépendances) facilite l'extension :

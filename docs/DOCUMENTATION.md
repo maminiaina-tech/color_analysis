@@ -1,6 +1,6 @@
-# ImageSense — Documentation technique
+# MamiLoko Vision — Documentation technique
 
-**ImageSense : analyse colorimétrique d'images — extraction automatique des couleurs dominantes, estimation des proportions et classification par clustering, avec retouche d'image en temps réel.**
+**MamiLoko Vision : analyse colorimétrique d'images — extraction automatique des couleurs dominantes, estimation des proportions et classification par clustering, avec retouche d'image en temps réel.**
 
 Application web **Python + Streamlit** · Espace colorimétrique **LAB** · Clustering **KMeans** · Score de **silhouette**.
 
@@ -38,7 +38,7 @@ Application web **Python + Streamlit** · Espace colorimétrique **LAB** · Clus
 
 ## 1. Résumé
 
-ImageSense est une application web d'analyse colorimétrique et de retouche d'image en temps réel. L'utilisateur téléverse une image (JPG, PNG, WEBP), la retouche via une barre latérale inspirée de Photoshop (luminosité, contraste, saturation, gamma, exposition, température, vibrance, vignettage, filtres artistiques…), puis lance une analyse qui extrait automatiquement les **couleurs dominantes**, estime leurs **proportions** et les classe par **clustering KMeans** dans l'espace perceptuel **CIELAB**.
+MamiLoko Vision est une application web d'analyse colorimétrique et de retouche d'image en temps réel. L'utilisateur téléverse une image (JPG, PNG, WEBP), la retouche via une barre latérale inspirée de Photoshop (luminosité, contraste, saturation, gamma, exposition, température, vibrance, vignettage, filtres artistiques…), puis lance une analyse qui extrait automatiquement les **couleurs dominantes**, estime leurs **proportions** et les classe par **clustering KMeans** dans l'espace perceptuel **CIELAB**.
 
 Le nombre de couleurs est soit choisi manuellement, soit déterminé automatiquement par optimisation du **score de silhouette** sur un intervalle K ∈ [2, 8]. Chaque couleur extraite est nommée approximativement (bleu, vert, gris…) par recherche du plus proche voisin dans un dictionnaire de 67 couleurs de référence, mesuré par **distance euclidienne dans LAB (ΔE)**.
 
@@ -50,7 +50,7 @@ Le pipeline repose sur : conversion **RGB → LAB**, échantillonnage aléatoire
 
 ## 2. Abstract
 
-ImageSense is a web application for colorimetric image analysis and real-time photo editing. The user uploads an image (JPG, PNG, WEBP), edits it through a Photoshop-inspired sidebar (brightness, contrast, saturation, gamma, exposure, temperature, vibrance, vignetting, artistic filters…), then triggers an analysis that automatically extracts **dominant colors**, estimates their **proportions**, and classifies them via **KMeans clustering** in the perceptually-uniform **CIELAB** color space.
+MamiLoko Vision is a web application for colorimetric image analysis and real-time photo editing. The user uploads an image (JPG, PNG, WEBP), edits it through a Photoshop-inspired sidebar (brightness, contrast, saturation, gamma, exposure, temperature, vibrance, vignetting, artistic filters…), then triggers an analysis that automatically extracts **dominant colors**, estimates their **proportions**, and classifies them via **KMeans clustering** in the perceptually-uniform **CIELAB** color space.
 
 The number of colors is either set manually or selected automatically by maximizing the **silhouette score** over K ∈ [2, 8]. Each extracted color is roughly named (blue, green, gray…) by nearest-neighbor search against a dictionary of 67 reference colors, using **Euclidean distance in LAB space (ΔE)**.
 
@@ -64,7 +64,7 @@ The pipeline relies on: **RGB → LAB** conversion, random pixel sampling (≤ 3
 
 L'analyse des couleurs d'une image est un problème classique de vision par ordinateur, utilisé dans les domaines du design, du marketing, de la photographie et du e-commerce. L'objectif est de réduire une image (des centaines de milliers de pixels) à un petit ensemble de couleurs représentatives accompagnées de leurs proportions.
 
-La difficulté principale est que l'espace **RGB** n'est pas **perceptuellement uniforme** : une distance euclidienne dans RGB ne reflète pas la distance perçue par l'œil humain. ImageSense répond à ce problème en travaillant dans l'espace **CIELAB**, conçu pour que la distance euclidienne y approxime la différence perceptuelle, et en utilisant **KMeans** pour regrouper les pixels en clusters de couleurs dominantes.
+La difficulté principale est que l'espace **RGB** n'est pas **perceptuellement uniforme** : une distance euclidienne dans RGB ne reflète pas la distance perçue par l'œil humain. MamiLoko Vision répond à ce problème en travaillant dans l'espace **CIELAB**, conçu pour que la distance euclidienne y approxime la différence perceptuelle, et en utilisant **KMeans** pour regrouper les pixels en clusters de couleurs dominantes.
 
 Ce document présente l'architecture du projet, puis détaille les modèles mathématiques sous-jacents (conversions colorimétriques, clustering, métriques de qualité, modèles de retouche).
 
@@ -101,7 +101,7 @@ Le projet part d'un constat : extraire les couleurs dominantes d'une image de fa
 L'application suit une architecture modulaire à **injection de dépendances** : le module central `ColorAnalyzer` orchestre des services indépendants, ce qui facilite les tests et la maintenance.
 
 ```text
-ImageSense/
+MamiLoko Vision/
 │
 ├── app.py                  # Point d'entrée Streamlit (orchestration UI)
 ├── constants.py            # Constantes : couleurs de référence, bornes K, seuils
@@ -116,7 +116,7 @@ ImageSense/
 ├── styles.py               # CSS global + CSS iframe
 ├── .streamlit/config.toml  # Thème océan Streamlit
 ├── requirements.txt        # Dépendances Python
-├── logo/                   # Images de présentation (assets)
+├── logo/                   # Logo du projet (PNG, SVG, icône) et assets
 ├── docs/                   # Documentation : .tex, .md, .pdf, script de compilation
 └── README.md               # Présentation du projet
 ```
@@ -491,4 +491,4 @@ Le redimensionnement (taille max 600 px par défaut, réglable jusqu'à 1 000 px
 
 ## 12. Conclusion
 
-ImageSense combine des concepts mathématiques éprouvés — espace perceptuel CIELAB, clustering KMeans, score de silhouette, distance ΔE — dans une application web interactive et professionnelle. L'architecture modulaire (injection de dépendances) facilite l'extension : nouveaux espaces colorimétriques (HSV, HSL), clustering hiérarchique ou DBSCAN, seuillage de ΔE pour le nommage, ou analyse par régions constituent les pistes d'évolution naturelles.
+MamiLoko Vision combine des concepts mathématiques éprouvés — espace perceptuel CIELAB, clustering KMeans, score de silhouette, distance ΔE — dans une application web interactive et professionnelle. L'architecture modulaire (injection de dépendances) facilite l'extension : nouveaux espaces colorimétriques (HSV, HSL), clustering hiérarchique ou DBSCAN, seuillage de ΔE pour le nommage, ou analyse par régions constituent les pistes d'évolution naturelles.

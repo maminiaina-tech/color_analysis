@@ -1,9 +1,9 @@
 # image_editor.py
 
 import numpy as np
-from PIL import Image, ImageEnhance, ImageFilter, ImageOps, ImageChops
+from PIL import Image, ImageEnhance, ImageFilter, ImageOps
 
-from constants import ARTISTIC_FILTERS, TINT_COLORS
+from constants import ARTISTIC_FILTERS, TINT_COLORS, RANDOM_STATE
 
 
 # ============================================================
@@ -313,13 +313,15 @@ class ImageEditor:
         Fait pivoter la teinte de l'image.
 
         La teinte est traitée dans l'espace HSV fourni par PIL.
+        Chaque valeur du canal H est décalée via une table de
+        correspondance (LUT), avec retour à 0 après 255.
         """
         hsv = img.convert("HSV")
         h, s, v = hsv.split()
 
         offset = int(round(hue / 360.0 * 256)) % 256
-        # PIL.ImageOps has no 'offset' function; use ImageChops.offset
-        h = ImageChops.offset(h, offset, 0)
+        lut = [(i + offset) % 256 for i in range(256)]
+        h = h.point(lut)
 
         return Image.merge("HSV", (h, s, v)).convert("RGB")
 
@@ -376,10 +378,13 @@ class ImageEditor:
     def _grain(arr: np.ndarray, grain: float) -> np.ndarray:
         """
         Ajoute un bruit gaussien pour imiter le grain de film.
+
+        La graine est fixe afin que le rendu reste stable
+        d'un rafraîchissement à l'autre de la page.
         """
         if grain <= 0:
             return arr
-        noise = np.random.default_rng().normal(
+        noise = np.random.default_rng(RANDOM_STATE).normal(
             0.0,
             grain / 100.0 * 50.0,
             size=arr.shape

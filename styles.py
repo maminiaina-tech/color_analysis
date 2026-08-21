@@ -47,29 +47,85 @@ a {
 }
 
 /* ============================================================
-   Bandeau d'en-tête (hero)
+   Bandeau d'en-tête (hero) — design divisé :
+   panneau gauche blanc dégradé (logo sarcelle bien visible),
+   séparation oblique stylée, bordure de carte en dégradé,
+   + zone droite en dégradé sarcelle (titre, texte, badges).
    ============================================================ */
 
 .hero {
-    background: linear-gradient(135deg, #137C8B 0%, #709CA7 100%);
+    display: flex;
+    align-items: stretch;
+    border: 1px solid transparent;
     border-radius: 18px;
-    padding: 2.2rem 2.4rem;
-    color: #FFFFFF;
     margin-bottom: 1.6rem;
-    box-shadow: 0 12px 30px rgba(19, 124, 139, 0.35);
+    box-shadow: 0 12px 30px rgba(19, 124, 139, 0.18);
+    overflow: hidden;
+    /* Bordure en dégradé : fond blanc à l'intérieur,
+       dégradé sarcelle → gris bleu sur l'anneau de bordure. */
+    background:
+        linear-gradient(180deg, #FFFFFF 0%, #F4F8FA 100%) padding-box,
+        linear-gradient(135deg, #137C8B 0%, #709CA7 45%, #DCE8EB 100%) border-box;
+}
+
+.hero-brand {
+    flex: 0 0 230px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    /* Dégradé diagonal très doux pour dynamiquer le blanc
+       sans gêner la lisibilité du logo. */
+    background: linear-gradient(165deg, #FFFFFF 30%, #E4EEF2 100%);
+    padding: 1.8rem 1.4rem;
+}
+
+.hero-logo {
+    width: 150px;
+    height: 150px;
+}
+
+.hero-main {
     position: relative;
+    flex: 1 1 auto;
+    min-width: 0;
+    background: linear-gradient(135deg, #137C8B 0%, #709CA7 100%);
+    /* Bord gauche oblique : le panneau clair s'invite en biseau. */
+    clip-path: polygon(56px 0, 100% 0, 100% 100%, 0 100%);
+    padding: 2rem 2.4rem 2rem calc(2.4rem + 44px);
+    color: #FFFFFF;
     overflow: hidden;
 }
 
-.hero::after {
+.hero-main::after {
     content: "";
     position: absolute;
     top: -60%;
     right: -10%;
     width: 340px;
     height: 340px;
-    background: rgba(255, 255, 255, 0.25);
+    background: rgba(255, 255, 255, 0.18);
     border-radius: 50%;
+}
+
+@media (max-width: 760px) {
+    .hero {
+        flex-direction: column;
+    }
+
+    .hero-brand {
+        flex-basis: auto;
+        padding: 1.4rem;
+    }
+
+    .hero-logo {
+        width: 96px;
+        height: 96px;
+    }
+
+    .hero-main {
+        clip-path: none;
+        padding: 1.6rem 1.4rem;
+    }
 }
 
 .hero-title {

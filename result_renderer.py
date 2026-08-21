@@ -156,14 +156,21 @@ class ResultRenderer:
     # Bouton de lancement de l'analyse dans l'onglet.
     # ========================================================
 
-    def render_analyze_button(self):
+    def render_analyze_button(self, signature=None):
         """
         Cette fonction affiche le bouton de lancement de l'analyse
         dans l'onglet "Analyse des couleurs".
 
-        Une fois l'analyse effectuée, le bouton est remplacé
-        par un bouton "Réinitialiser l'analyse" qui efface
-        les résultats affichés.
+        Logique :
+        - si des résultats existent et que les paramètres sont
+          inchangés (signature identique), le bouton est remplacé
+          par un bouton "Réinitialiser l'analyse" ;
+        - si les paramètres ont changé, un message invite à
+          relancer l'analyse pour mettre à jour les résultats.
+
+        Paramètre :
+        - signature : empreinte des paramètres d'analyse calculée
+          dans app.py (None si aucun résultat à comparer).
         """
 
         # Vérifie si des résultats d'analyse existent déjà.
@@ -172,8 +179,15 @@ class ResultRenderer:
             for key in ["image_rgb", "segmented_rgb", "couleurs", "metadata"]
         )
 
-        # Cas 1 : des résultats existent, on propose de réinitialiser.
-        if a_resultats:
+        # Vérifie si les paramètres sont inchangés depuis la
+        # dernière analyse.
+        parametres_inchanges = (
+            signature is not None
+            and st.session_state.get("analysis_signature") == signature
+        )
+
+        # Cas 1 : résultats à jour, on propose de réinitialiser.
+        if a_resultats and parametres_inchanges:
             if st.button(
                 ":material/restart_alt: Réinitialiser l'analyse",
                 key="reset_analysis",
@@ -183,14 +197,23 @@ class ResultRenderer:
                     "image_rgb",
                     "segmented_rgb",
                     "couleurs",
-                    "metadata"
+                    "metadata",
+                    "analysis_signature"
                 ]:
                     st.session_state.pop(key, None)
 
             # On n'analyse pas à nouveau.
             return False
 
-        # Cas 2 : aucun résultat, on propose de lancer l'analyse.
+        # Cas 2 : résultats obsolètes, on invite à relancer.
+        if a_resultats:
+            st.info(
+                "Les paramètres ont changé : relancez l'analyse "
+                "pour mettre à jour les résultats.",
+                icon=":material/info:"
+            )
+
+        # Cas 3 : aucun résultat, on propose de lancer l'analyse.
         st.markdown(
             """
             <div style="background:#DCE8EB; border:1px solid #709CA7;
@@ -948,7 +971,7 @@ class ResultRenderer:
                 )
 
         # Étape 4 : précisions complémentaires.
-        col4, col5, col6 = st.columns(3)
+        col4, col5 = st.columns(2)
         with col4:
             st.caption(
                 f"Mode de clustering : **{metadata.mode_clustering}**"
@@ -1216,7 +1239,7 @@ class ResultRenderer:
             st.download_button(
                 label=":material/description: Télécharger JSON",
                 data=json.dumps(json_data, ensure_ascii=False, indent=2),
-                file_name="imagesense_couleurs.json",
+                file_name="mamiloko_vision_couleurs.json",
                 mime="application/json",
                 key="download_json",
                 width="stretch",
@@ -1230,7 +1253,7 @@ class ResultRenderer:
             st.download_button(
                 label=":material/table_chart: Télécharger CSV",
                 data=csv_data,
-                file_name="imagesense_couleurs.csv",
+                file_name="mamiloko_vision_couleurs.csv",
                 mime="text/csv",
                 key="download_csv",
                 width="stretch",

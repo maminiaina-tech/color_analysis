@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 1200">
+<path d="M 220 470 A 380 215 0 0 1 980 470 A 380 150 0 0 1 220 470 Z" fill="#F4FAFB"/>
+<defs><clipPath id='%s'><path d='M 220 470 A 380 215 0 0 1 980 470 A 380 150 0 0 1 220 470 Z'/></clipPath></defs>
+<path d="M 600 470 L 600 298 A 172 172 0 0 1 721.62 348.38 Z" fill="#0D2C40" clip-path="url(#eyeClip)"/>
+<path d="M 600 470 L 721.62 348.38 A 172 172 0 0 1 772 470 Z" fill="#124662" clip-path="url(#eyeClip)"/>
+<path d="M 600 470 L 772 470 A 172 172 0 0 1 721.62 591.62 Z" fill="#176184" clip-path="url(#eyeClip)"/>
+<path d="M 600 470 L 721.62 591.62 A 172 172 0 0 1 600 642 Z" fill="#137C8B" clip-path="url(#eyeClip)"/>
+<path d="M 600 470 L 600 642 A 172 172 0 0 1 478.38 591.62 Z" fill="#2E97A8" clip-path="url(#eyeClip)"/>
+<path d="M 600 470 L 478.38 591.62 A 172 172 0 0 1 428 470 Z" fill="#56B1BD" clip-path="url(#eyeClip)"/>
+<path d="M 600 470 L 428 470 A 172 172 0 0 1 478.38 348.38 Z" fill="#8CC9D1" clip-path="url(#eyeClip)"/>
+<path d="M 600 470 L 478.38 348.38 A 172 172 0 0 1 600 298 Z" fill="#C8A44D" clip-path="url(#eyeClip)"/>
+<circle cx="600" cy="470" r="172" fill="none" stroke="#FFFFFF" stroke-width="14"/>
+<circle cx="600" cy="470" r="64" fill="#344D59"/>
+<circle cx="627" cy="435" r="17" fill="#FFFFFF" opacity="0.9"/>
+<path d="M 220 470 A 380 215 0 0 1 980 470 A 380 150 0 0 1 220 470 Z" fill="none" stroke="#344D59" stroke-width="24" stroke-linejoin="round"/>
+<text x="600" y="830" text-anchor="middle" font-family="Liberation Sans, Arial, Helvetica, sans-serif" font-size="148" font-weight="bold" fill="#344D59">MamiLoko</text>
+<text x="600" y="975" text-anchor="middle" font-family="Liberation Sans, Arial, Helvetica, sans-serif" font-size="78" letter-spacing="30" fill="#137C8B">VISION</text>
+</svg>

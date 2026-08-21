@@ -1,6 +1,9 @@
 # app.py
 
+import base64
 import io
+import json
+import os
 
 import streamlit as st
 
@@ -21,11 +24,30 @@ from image_editor import ImageEditor
 # ============================================================
 
 st.set_page_config(
-    page_title="ImageSense — Analyse & retouche d'images",
-    page_icon=":material/palette:",
+    page_title="MamiLoko Vision",
+    page_icon="logo/logo_icon.png",
     layout="wide",
     initial_sidebar_state="expanded",
 )
+
+
+# ============================================================
+# Chargement du logo (encodé en base64 pour l'intégrer au hero).
+# ============================================================
+
+def charger_logo_base64() -> str:
+    """
+    Retourne le logo encodé en URI base64, ou une chaîne vide
+    si le fichier est introuvable.
+    """
+    chemin = os.path.join(os.path.dirname(__file__), "logo", "logo_hd.png")
+    if not os.path.exists(chemin):
+        return ""
+    with open(chemin, "rb") as f:
+        return "data:image/png;base64," + base64.b64encode(f.read()).decode("utf-8")
+
+
+logo_uri = charger_logo_base64()
 
 # ============================================================
 # Injection du style global personnalisé.
@@ -35,23 +57,36 @@ inject_global_css()
 
 
 # ============================================================
-# Bandeau d'en-tête (hero).
+# Bandeau d'en-tête (hero) avec logo.
 # ============================================================
 
+logo_html = (
+    f'<img class="hero-logo" src="{logo_uri}" alt="Logo MamiLoko Vision" />'
+    if logo_uri
+    else ""
+)
+
+# Panneau gauche blanc réservé au logo (le logo sarcelle doit
+# trancher sur un fond clair pour rester bien visible).
+brand_html = f'<div class="hero-brand">{logo_html}</div>' if logo_html else ""
+
 st.markdown(
-    """
+    f"""
     <div class="hero">
-        <div class="hero-title">ImageSense</div>
-        <div class="hero-subtitle">
-            Analyse colorimétrique professionnelle et retouche d'image en temps réel.
-            Téléversez une photo, retouchez-la, puis extrayez automatiquement
-            ses couleurs dominantes grâce au clustering.
-        </div>
-        <div class="hero-badges">
-            <span class="hero-badge">Retouche en direct</span>
-            <span class="hero-badge">Clustering KMeans</span>
-            <span class="hero-badge">Espace colorimétrique LAB</span>
-            <span class="hero-badge">Export JSON &amp; CSV</span>
+        {brand_html}
+        <div class="hero-main">
+            <div class="hero-title">MamiLoko Vision</div>
+            <div class="hero-subtitle">
+                Analyse colorimétrique professionnelle et retouche d'image en temps réel.
+                Téléversez une photo, retouchez-la, puis extrayez automatiquement
+                ses couleurs dominantes grâce au clustering.
+            </div>
+            <div class="hero-badges">
+                <span class="hero-badge">Retouche en direct</span>
+                <span class="hero-badge">Clustering KMeans</span>
+                <span class="hero-badge">Espace colorimétrique LAB</span>
+                <span class="hero-badge">Export JSON &amp; CSV</span>
+            </div>
         </div>
     </div>
     """,
@@ -77,23 +112,50 @@ if uploaded_file is not None:
 
 
 # ============================================================
-# Helper de chargement de l'image depuis la session.
+# Helpers mis en cache (st.cache_data évite de refaire les
+# calculs lourds à chaque interaction avec un widget).
 # ============================================================
 
-def charger_image(max_size: int):
+@st.cache_data(show_spinner=False)
+def charger_image(bytes_data: bytes, max_size: int):
     """
     Charge l'image depuis les octets stockés dans la session.
 
-    Paramètre :
+    Paramètres :
+    - bytes_data : octets de l'image téléversée.
     - max_size : taille maximale après redimensionnement.
     """
 
-    bytes_data = st.session_state.get("uploaded_bytes")
-    if bytes_data is None:
-        return None
-
     processor = ImageProcessor(max_size=max_size)
     return processor.load_image(io.BytesIO(bytes_data))
+
+
+@st.cache_data(show_spinner=False)
+def analyser_image(image_rgb, mode: str, fixed_k: int, max_size: int):
+    """
+    Lance l'analyse colorimétrique complète.
+
+    Le résultat est mis en cache : relancer l'analyse avec la
+    même image et les mêmes paramètres est instantané.
+
+    Paramètres :
+    - image_rgb : image à analyser.
+    - mode : "Automatique" ou "Manuel".
+    - fixed_k : nombre de clusters en mode manuel.
+    - max_size : taille maximale de l'image (injection dépendance).
+    """
+
+    analyzer = ColorAnalyzer(
+        image_processor=ImageProcessor(max_size=max_size),
+        color_processor=ColorProcessor(),
+        clustering_service=ClusteringService()
+    )
+
+    return analyzer.analyze(
+        image_rgb=image_rgb,
+        mode=mode,
+        fixed_k=fixed_k
+    )
 
 
 # ============================================================
@@ -122,7 +184,10 @@ else:
     # ========================================================
     # Étape 1 : chargement de l'image originale.
     # ========================================================
-    original_rgb = charger_image(DEFAULT_MAX_SIZE)
+    original_rgb = charger_image(
+        st.session_state["uploaded_bytes"],
+        DEFAULT_MAX_SIZE
+    )
 
     # ========================================================
     # Étape 2 : réglages de retouche dans la barre latérale.
@@ -143,7 +208,20 @@ else:
     edited_rgb = editor.apply(original_rgb, **adjustments)
 
     # ========================================================
-    # Étape 5 : onglets Retouche / Analyse.
+    # Étape 5 : signature des paramètres d'analyse.
+    # ========================================================
+    # Permet de détecter un changement de paramètres et de
+    # proposer une nouvelle analyse sans réinitialiser manuellement.
+    signature = (
+        max_size,
+        mode,
+        fixed_k,
+        analyser_retouchee,
+        json.dumps(adjustments, sort_keys=True) if analyser_retouchee else "",
+    )
+
+    # ========================================================
+    # Étape 6 : onglets Retouche / Analyse.
     # ========================================================
     tab_retouche, tab_analyse = st.tabs(
         [":material/tune: Retouche d'image", ":material/palette: Analyse des couleurs"]
@@ -162,35 +240,25 @@ else:
     with tab_analyse:
 
         # Bouton de lancement de l'analyse dans l'onglet.
-        analyze_button = renderer.render_analyze_button()
+        analyze_button = renderer.render_analyze_button(signature)
 
         # Image utilisée pour l'analyse.
         base_image = (
             edited_rgb
             if analyser_retouchee
-            else charger_image(max_size)
+            else charger_image(st.session_state["uploaded_bytes"], max_size)
         )
 
         # Analyse uniquement si le bouton est cliqué.
         if analyze_button:
 
-            # Création des processeurs.
-            color_processor = ColorProcessor()
-            clustering_service = ClusteringService()
-
-            # Création de l'analyseur principal.
-            analyzer = ColorAnalyzer(
-                image_processor=ImageProcessor(max_size=max_size),
-                color_processor=color_processor,
-                clustering_service=clustering_service
-            )
-
-            # Analyse de l'image.
+            # Analyse de l'image (mise en cache).
             with st.spinner("Analyse de l'image en cours..."):
-                couleurs, segmented_rgb, metadata = analyzer.analyze(
+                couleurs, segmented_rgb, metadata = analyser_image(
                     image_rgb=base_image,
                     mode=mode,
-                    fixed_k=fixed_k
+                    fixed_k=fixed_k,
+                    max_size=max_size
                 )
 
             # Sauvegarde des résultats dans session_state.
@@ -198,6 +266,7 @@ else:
             st.session_state["segmented_rgb"] = segmented_rgb
             st.session_state["couleurs"] = couleurs
             st.session_state["metadata"] = metadata
+            st.session_state["analysis_signature"] = signature
 
         # Affichage des résultats s'ils existent.
         if all(
@@ -218,7 +287,7 @@ else:
 st.markdown(
     """
     <div class="footer">
-        ImageSense · Retouche &amp; analyse colorimétrique d'images
+        MamiLoko Vision · Retouche &amp; analyse colorimétrique d'images
     </div>
     """,
     unsafe_allow_html=True,
