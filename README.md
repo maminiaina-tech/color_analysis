@@ -123,7 +123,7 @@ Les fixtures partagées (images synthétiques rouge, bicolore, dégradée, noire
 ## Structure du projet
 
 ```text
-MamiLoko Vision/
+mamiloko-vision/
 │
 ├── app.py                  # Point d'entrée de l'application Streamlit
 ├── constants.py            # Constantes et paramètres du projet
